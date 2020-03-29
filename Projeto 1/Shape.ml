@@ -65,9 +65,31 @@ let rec countBasic s =
 
 (* FUNCTION belongs *)
 
-let belongs p s =
-    true
+let rec belongs p s =
+    match s with
+    Rect (t,b) -> between p t b 
+    | Circle (c,f) -> belongC p c f
+    | Union (l,r) -> belongs p l || belongs p r
+    | Intersection (l,r) -> belongs p l && belongs p r
+    | Subtraction (l,r) -> belongs p l && not(belongs p r)
 ;;
+
+let between p t b =
+    match p with
+        (px, py) -> match t with
+                        (tx, ty) -> if px>=tx && py>=ty then
+                                        match b with
+                                            (bx, by) -> px<=bx && py<=by
+                                    else
+                                        false
+;;
+
+let belongC p c f =
+    match p with
+    (px, py) -> match t with
+                    (tx, ty) -> Pervasives.sqrt(((px-tx)*(px-tx)) + ((py-ty)*(py-ty)))<=f
+;;
+
 
 
 (* FUNCTION density
@@ -79,15 +101,25 @@ let belongs p s =
     imenso
     imensoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo *)
 
-let density p s =
-    0
+let rec density p s =
+    match s with
+    Rect (t,b) -> if between p t b then 1 else 0
+    | Circle (c,f) -> if belongC p c f then 1 else 0
+    | Union (l,r) -> desity p l + density p r
+    | Intersection (l,r) -> if (belongs p l && belongs p r) then desity p l + density p r else 0
+    | Subtraction (l,r) -> if (density p l - density p r)<0 then 0 else density p l - density p r
 ;;
 
 
 (* FUNCTION which *)
 
-let which p s =
-    [s]
+let  rec which p s =
+    match s with
+    Rect (t,b) -> if between p t b then [Rect (t,b)] else [] 
+    | Circle (c,f) -> if belongC p c f then [Circle (c,f)] else []
+    | Union (l,r) -> which p l @ which p r
+    | Intersection (l,r) -> if (belongs p l && belongs p r) then which p l @ which p r else []
+    | Subtraction (l,r) -> if (density p l - density p r)<0 then [] else which p l @ which p r(*quais os sólidos a retirar??*)(**tirar adjoin*))
 ;;
 
 
