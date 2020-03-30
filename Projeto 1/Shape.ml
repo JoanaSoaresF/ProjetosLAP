@@ -53,13 +53,13 @@ let rec hasRect s =
 
 (* FUNCTION countBasic *)
 
-let rec countBasic s =
+let rec countBasic s = (*e os failwith??*)
   match s with
-    Rect (p,q) -> failwith "countBasic: Rect"
-  | Circle (p,f) -> failwith "countBasic: Circle"
-  | Union (l,r) -> failwith "countBasic: Union"
-  | Intersection (l,r) -> failwith "countBasic: Intersection"
-  | Subtraction (l,r) -> failwith "countBasic: Subtraction"
+    Rect (p,q) -> 1
+  | Circle (p,f) -> 1 
+  | Union (l,r) 
+  | Intersection (l,r) 
+  | Subtraction (l,r) -> countBasic l + countBasic r
 ;;
 
 
@@ -107,13 +107,13 @@ let rec density p s =
 
 let  rec which p s =
   match s with
-    Rect (t,b) -> if belongsRect p t b then [Rect (t,b)] else [] 
-  | Circle (c,f) -> if belongsCircle p c f then [Circle (c,f)] else []
-  | Union (l,r) -> which p l @ which p r
-  | Intersection (l,r) -> if (belongs p l && belongs p r) then which p l @ which p r else []
-  | Subtraction (l,r) -> if (density p l - density p r)<0 then [] else which p l @ which p r(*quais os sólidos a retirar??*)(**tirar adjoin*)
-;;
-
+    Rect (t,b) -> if belongs p s then [Rect (t,b)] else [] 
+  | Circle (c,f) -> if belongs p s then [Circle (c,f)] else []
+  | Union (l,r) -> if density p s >= 2 
+    then (which p l)@(which p r) 
+    else  if belongs p l then which p l else which p r
+  | Intersection (l,r) -> if belongs p s then which p l @ which p r else []
+  | Subtraction (l,r) -> if density p s = 0 then [] else which p l
 
 (* FUNCTION minBound *)
 
