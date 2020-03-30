@@ -120,16 +120,13 @@ let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) =
   ((min x1 x3 , min y1 y3), (max x2 x4, max y2 y4 ))
 ;;
 
-let rec maxDimInter  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
-  ((max x1 x3 , max y1 y3), (min x2 x4, max y2 y4 ))
-;;
 
 let rec sizeRect s = match s with 
     Rect (t,b) -> (t,b)
   | Circle ((cx, cy),f) -> ((cx-.f, cy+.f) , (cx+.f, cy-.f))
-  | Union (l,r) -> maxDimUnion (sizeRect l)  (sizeRect  r)
-  | Intersection (l,r) -> maxDimInter (sizeRect l)  (sizeRect r)
-  | Subtraction (l,r) -> sizeRect l
+  | Union (l,r) 
+  | Intersection (l,r) 
+  | Subtraction (l,r) -> maxDimUnion (sizeRect l)  (sizeRect  r)
 
 ;;
 
@@ -150,10 +147,7 @@ let rec createLine m n a b  =  let f = float_of_int m in let nf = float_of_int n
   else Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b))
 
 ;;
-let rec gridAux m n a b x = Rect(x)
 
-
-;;
 let grid m n a b =
   shape1
 ;;
