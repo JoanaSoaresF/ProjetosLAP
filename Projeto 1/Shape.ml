@@ -101,9 +101,7 @@ let rec density p s =
   | Intersection (l,r) -> if (belongs p l && belongs p r) 
     then density p l + density p r 
     else 0
-  | Subtraction (l,r) -> if (density p l - density p r)<0 
-    then 0 
-    else density p l - density p r
+  | Subtraction (l,r) -> if belongs p r then 0 else density p l
 ;;
 
 
@@ -115,7 +113,7 @@ let  rec which p s =
   | Circle (c,f) -> if belongs p s then [Circle (c,f)] else []
   | Union (l,r) ->  (which p l)@(which p r) 
   | Intersection (l,r) -> if belongs p s then which p l @ which p r else []
-  | Subtraction (l,r) -> if density p s = 0 then [] else which p l
+  | Subtraction (l,r) -> if belongs p r  then [] else which p l
 
 (* FUNCTION minBound *)
 let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
@@ -141,6 +139,21 @@ let rec minBound s = match sizeRect s with
 ;;
 (* FUNCTION grid *)
 
+let rec createLine m n a b  =  let f = float_of_int m in let nf = float_of_int n in 
+  if (m mod 2)=0 
+  then if n>=4  
+    then let f = float_of_int m in let nf = float_of_int n in 
+      Union( Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b)), createLine (n-2) m a b)
+    else Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b))
+  else if n>=4  
+  then Union( Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b)), createLine (n-2) m a b)
+  else Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b))
+
+;;
+let rec gridAux m n a b x = Rect(x)
+
+
+;;
 let grid m n a b =
   shape1
 ;;
