@@ -117,8 +117,13 @@ let  rec which p s =
 
 (* FUNCTION minBound *)
 
-let minBound s =
-  rect1
+let rec minBound s =
+  match s with
+    Rect (t,b) -> Rect(t,b)
+  | Circle ((cx, cy),f) -> Rect((cx-.f, cy+.f) , (cx+.f, cy-.f))
+  | Union (l,r) ->  Union(minBound l , minBound r)
+  | Intersection (l,r) -> Intersection (minBound l , minBound r)
+  | Subtraction (l,r) -> minBound l
 ;;
 
 
