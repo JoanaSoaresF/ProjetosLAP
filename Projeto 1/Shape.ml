@@ -136,20 +136,20 @@ let rec minBound s = match sizeRect s with
 ;;
 (* FUNCTION grid *)
 
-let rec createLine m n a b  =  let f = float_of_int m in let nf = float_of_int n in 
+let rec createLine m n a b  =  let mf = float_of_int m in let nf = float_of_int n in 
   if (m mod 2)=0 
   then if n>=4  
-    then let f = float_of_int m in let nf = float_of_int n in 
-      Union( Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b)), createLine (n-2) m a b)
-    else Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b))
+    then Union( Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)), createLine (n-2) m a b)
+    else Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b))
   else if n>=4  
-  then Union( Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b)), createLine (n-2) m a b)
-  else Rect(((nf-.2.)*.a, (f-.1.)*.b), ((nf-.1.)*.a, f*.b))
+  then Union( Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)), createLine (n-2) m a b)
+  else Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b))
 
 ;;
 
-let grid m n a b =
-  shape1
+let rec grid m n a b = if m = 1
+  then createLine m n a b
+  else Union((createLine m n a b), (grid (m-1) n a b))
 ;;
 
 
