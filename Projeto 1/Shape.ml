@@ -98,8 +98,12 @@ let rec density p s =
     Rect (t,b) -> if belongs p s then 1 else 0
   | Circle (c,f) -> if belongs p s then 1 else 0
   | Union (l,r) -> density p l + density p r
-  | Intersection (l,r) -> if (belongs p l && belongs p r) then density p l + density p r else 0
-  | Subtraction (l,r) -> if (density p l - density p r)<0 then 0 else density p l - density p r
+  | Intersection (l,r) -> if (belongs p l && belongs p r) 
+    then density p l + density p r 
+    else 0
+  | Subtraction (l,r) -> if (density p l - density p r)<0 
+    then 0 
+    else density p l - density p r
 ;;
 
 
@@ -109,24 +113,32 @@ let  rec which p s =
   match s with
     Rect (t,b) -> if belongs p s then [Rect (t,b)] else [] 
   | Circle (c,f) -> if belongs p s then [Circle (c,f)] else []
-  | Union (l,r) -> if density p s >= 2 
-    then (which p l)@(which p r) 
-    else  if belongs p l then which p l else which p r
+  | Union (l,r) ->  (which p l)@(which p r) 
   | Intersection (l,r) -> if belongs p s then which p l @ which p r else []
   | Subtraction (l,r) -> if density p s = 0 then [] else which p l
 
 (* FUNCTION minBound *)
-
-let rec minBound s =
-  match s with
-    Rect (t,b) -> Rect(t,b)
-  | Circle ((cx, cy),f) -> Rect((cx-.f, cy+.f) , (cx+.f, cy-.f))
-  | Union (l,r) ->  Union(minBound l , minBound r)
-  | Intersection (l,r) -> Intersection (minBound l , minBound r)
-  | Subtraction (l,r) -> minBound l
+let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
+  ((min x1 x3 , min y1 y3), (max x2 x4, max y2 y4 ))
 ;;
 
+let rec maxDimInter  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
+  ((max x1 x3 , max y1 y3), (min x2 x4, max y2 y4 ))
+;;
 
+let rec sizeRect s = match s with 
+    Rect (t,b) -> (t,b)
+  | Circle ((cx, cy),f) -> ((cx-.f, cy+.f) , (cx+.f, cy-.f))
+  | Union (l,r) -> maxDimUnion (sizeRect l)  (sizeRect  r)
+  | Intersection (l,r) -> maxDimInter (sizeRect l)  (sizeRect r)
+  | Subtraction (l,r) -> sizeRect l
+
+;;
+
+let rec minBound s = match sizeRect s with
+    (t,b) -> Rect(t,b)
+
+;;
 (* FUNCTION grid *)
 
 let grid m n a b =
