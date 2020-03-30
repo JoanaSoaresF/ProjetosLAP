@@ -115,6 +115,8 @@ let  rec which p s =
   | Intersection (l,r) -> if belongs p s then which p l @ which p r else []
   | Subtraction (l,r) -> if belongs p r  then [] else which p l
 
+;;
+
 (* FUNCTION minBound *)
 let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
   ((min x1 x3 , min y1 y3), (max x2 x4, max y2 y4 ))
@@ -139,11 +141,11 @@ let rec minBound s = match sizeRect s with
 let rec createLine m n a b  =  let mf = float_of_int m in let nf = float_of_int n in 
   if (m mod 2)=0 
   then if n>=4  
-    then Union( Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)), createLine (n-2) m a b)
+      then Union( Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)), createLine (n-2) m a b)
     else Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b))
   else if n>=4  
-  then Union( Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)), createLine (n-2) m a b)
-  else Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b))
+      then Union( Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)), createLine (n-2) m a b)
+    else Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b))
 
 ;;
 
