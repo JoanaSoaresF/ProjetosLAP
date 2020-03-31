@@ -200,28 +200,23 @@ let dimensions ((x1,y1), (x2, y2)) =
 
 
 let rec svg s =
-  "<!DOCTYPE html>
-<html>
-<body>
-"^
+  "<!DOCTYPE html><html><body>"^
   match dimensions (sizeRect s) with
     (x,y)-> "<svg width='"^ string_of_float x 
             ^"' height='"^ string_of_float y ^"'>"
             ^ shapehtml s 1             
-            ^" </svg>
-              </body>
-              </html>"
+            ^" </svg></body></html>"
 and  shapehtml s o=
   match s with
     Rect ((x1, y1),(x2,y2)) -> 
     "<rect width='"^ string_of_float (x2-.x1)^
     "' height='"^string_of_float(y2-.y1)^
-    "' style='fill:'"^(if o=1 then "black" else "white")^"'/>"
+    "' style='fill:"^(if o=1 then "black" else "white")^"'/>"
   | Circle ((cx, cy), f) -> 
     "<circle cx='"^string_of_float cx^
     "' cy='"^string_of_float cy^
     "' r='"^string_of_float f ^ 
-    "' fill='" ^ (if o=1 then "black" else "white")^"' />"
+    "' style='fill: " ^ (if o=1 then "black" else "white")^"' />"
   | Union (l,r) -> shapehtml l 1^shapehtml r 1
   | Intersection (l,r) -> shapehtml l 1^shapehtml r 1
   | Subtraction (l,r) -> shapehtml l 1^shapehtml r 0
