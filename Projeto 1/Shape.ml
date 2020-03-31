@@ -43,11 +43,11 @@ let shape1 = Union (rect1, rect2);;
 
 let rec hasRect s =
   match s with
-    Rect (p,q) -> true
-  | Circle (p,f) -> false
-  | Union (l,r) -> hasRect l || hasRect r
-  | Intersection (l,r) -> hasRect l || hasRect r
-  | Subtraction (l,r) -> hasRect l || hasRect r
+      Rect (p,q) -> true
+    | Circle (p,f) -> false
+    | Union (l,r) -> hasRect l || hasRect r
+    | Intersection (l,r) -> hasRect l || hasRect r
+    | Subtraction (l,r) -> hasRect l || hasRect r
 ;;
 
 
@@ -55,11 +55,11 @@ let rec hasRect s =
 
 let rec countBasic s = (*e os failwith??*)
   match s with
-    Rect (p,q) -> 1
-  | Circle (p,f) -> 1 
-  | Union (l,r) 
-  | Intersection (l,r) 
-  | Subtraction (l,r) -> countBasic l + countBasic r
+      Rect (p,q) -> 1
+    | Circle (p,f) -> 1 
+    | Union (l,r) 
+    | Intersection (l,r) 
+    | Subtraction (l,r) -> countBasic l + countBasic r
 ;;
 
 
@@ -82,10 +82,10 @@ let belongsCircle p c f =
 let rec belongs p s =
   match s with
     Rect (t,b) -> belongsRect p t b 
-  | Circle (c,f) -> belongsCircle p c f
-  | Union (l,r) -> belongs p l || belongs p r
-  | Intersection (l,r) -> belongs p l && belongs p r
-  | Subtraction (l,r) -> belongs p l && not(belongs p r)
+      | Circle (c,f) -> belongsCircle p c f
+    | Union (l,r) -> belongs p l || belongs p r
+    | Intersection (l,r) -> belongs p l && belongs p r
+    | Subtraction (l,r) -> belongs p l && not(belongs p r)
 ;;
 
 
@@ -99,7 +99,7 @@ let rec density p s =
   | Circle (c,f) -> if belongs p s then 1 else 0
   | Union (l,r) -> density p l + density p r
   | Intersection (l,r) -> if (belongs p l && belongs p r) 
-    then density p l + density p r 
+      then density p l + density p r 
     else 0
   | Subtraction (l,r) -> if belongs p r then 0 else density p l
 ;;
@@ -110,10 +110,10 @@ let rec density p s =
 let  rec which p s =
   match s with
     Rect (t,b) -> if belongs p s then [Rect (t,b)] else [] 
-  | Circle (c,f) -> if belongs p s then [Circle (c,f)] else []
-  | Union (l,r) ->  (which p l)@(which p r) 
-  | Intersection (l,r) -> if belongs p s then which p l @ which p r else []
-  | Subtraction (l,r) -> if belongs p r  then [] else which p l
+    | Circle (c,f) -> if belongs p s then [Circle (c,f)] else []
+    | Union (l,r) ->  (which p l)@(which p r) 
+    | Intersection (l,r) -> if belongs p s then which p l @ which p r else []
+    | Subtraction (l,r) -> if belongs p r  then [] else which p l
 
 ;;
 
@@ -123,12 +123,13 @@ let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) =
 ;;
 
 
-let rec sizeRect s = match s with 
-    Rect (t,b) -> (t,b)
-  | Circle ((cx, cy),f) -> ((cx-.f, cy+.f) , (cx+.f, cy-.f))
-  | Union (l,r) 
-  | Intersection (l,r) 
-  | Subtraction (l,r) -> maxDimUnion (sizeRect l)  (sizeRect  r)
+let rec sizeRect s = 
+  match s with 
+      Rect (t,b) -> (t,b)
+    | Circle ((cx, cy),f) -> ((cx-.f, cy+.f) , (cx+.f, cy-.f))
+    | Union (l,r) 
+    | Intersection (l,r) 
+    | Subtraction (l,r) -> maxDimUnion (sizeRect l)  (sizeRect  r)
 
 ;;
 
@@ -157,21 +158,77 @@ let rec grid m n a b = if m = 1
 
 (* FUNCTION countBasicRepetitions *)
 
+
+let rec repetitions a l =
+  match l with
+      [] -> 0
+    | x::xs -> (if a=x then 1 else 0) + repetitions a xs
+;;
+
+let rec listRunner l =
+  match l with
+    [] ->
+    |x::xs -> repetitions x xs + listRunner xs
+and repetitions a l =
+  match l with
+      [] -> 0
+    | x::xs -> (if a=x then 1 else 0) + repetitions a xs
+;;
+
+let rec listShapes s=
+  match s with
+    Rect (t,b) -> [Rect (t, b)]
+    | Circle (c,f) -> [Circle (c, f)]
+    | Union (l,r) 
+    | Intersection (l,r)
+    | Subtraction (l,r) -> (listShapes l)@(listShapes r)
+;;
+
+(* FUNCTION countBasicRepetitions *)
+
 let countBasicRepetitions s =
-  0
+  listRunner (listShapes s) 
+     
 ;;
 
 
 (* FUNCTION svg *)
 
+let dimensions Rect((x1,y1), (x2, y2)) =
+  ((x2-x1), (y2-y1))
+;;
+
+
 let svg s =
-  ""
+"<!DOCTYPE html>
+<html>
+<body>
+"^
+  match dimensions (minBound s) with
+    (x,y)-> "<svg width='"^ String_of_int x ^"' height='"^ String_of_int y ^"'>"
+
+^"
+</svg>
+
+</body>
+</html>"
+and rec shapehtml s o=
+  match s with
+    Rect (t,b) -> 
+    match dimensions (Rect (t,b)) with
+      (x,y)-> "<rect width='"^String_of_int x^"' height='"^String_of_int y^"' style='fill:'"^(if o=1 then "black" else "white")^"';stroke-width:1;stroke:'black' />"
+    | Circle ((cx, cy), f) -> 
+          "<circle cx='"^String_of_int cx^"' cy='"^String_of_int cy^"' r='"String_of_float f"' stroke='black' stroke-width='"1"' fill='"(if o=1 then "black" else "white")"' />"
+    | Union (l,r) -> shapehtml l 1^shapehtml r 1
+    | Intersection (l,r) -> shapehtml l 1^shapehtml r 1
+    | Subtraction (l,r) -> shapehtml l 1^shapehtml r 0
+
 ;;
 
 
 (* FUNCTION partition *)
 
 let partition s =
-  [s]
+  
 ;;
 
