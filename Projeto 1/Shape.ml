@@ -158,7 +158,6 @@ let rec grid m n a b = if m = 1
 
 (* FUNCTION countBasicRepetitions *)
 
-
 let rec repetitions a l =
   match l with
     [] -> 0
@@ -169,10 +168,6 @@ let rec listRunner l =
   match l with
     [] -> 0
   |x::xs -> repetitions x xs + listRunner xs
-and repetitions a l =
-  match l with
-    [] -> 0
-  | x::xs -> (if a=x then 1 else 0) + repetitions a xs
 ;;
 
 let rec listShapes s=
@@ -184,44 +179,58 @@ let rec listShapes s=
   | Subtraction (l,r) -> (listShapes l)@(listShapes r)
 ;;
 
-(* FUNCTION countBasicRepetitions *)
 
-let countBasicRepetitions s =
-  listRunner (listShapes s) 
+
+let countBasicRepetitions s = listRunner (listShapes s) 
 
 ;;
 
 
 (* FUNCTION svg *)
 
-let dimensions ((x1,y1), (x2, y2)) =
-  ((x2-.x1), (y2-.y1))
+let  genID = 
+  let idBase = ref 0 in
+  fun () ->
+    idBase := !idBase + 1;
+    "id" ^ (Printf.sprintf "%04d" !idBase)
+;;
+let boxSize s = match minBound s with
+    Rect ((x1, y1),(x2,y2)) ->" width='"^ string_of_float (x2)^
+                              "' height='"^string_of_float(y2)^
+                              "'>"
+  | Circle (c,f) -> failwith "boundingBox"
+  | Union (l,r) 
+  | Intersection (l,r)
+  | Subtraction (l,r) -> failwith "boundingBox"
 ;;
 
-
-let rec svg s =
-  "<!DOCTYPE html><html><body>"^
-  match dimensions (sizeRect s) with
-    (x,y)-> "<svg width='"^ string_of_float x 
-            ^"' height='"^ string_of_float y ^"'>"
-            ^ shapehtml s 1             
-            ^" </svg></body></html>"
-and  shapehtml s o=
+let  rec shapehtml s sub inter id=
   match s with
     Rect ((x1, y1),(x2,y2)) -> 
-    "<rect width='"^ string_of_float (x2-.x1)^
+    "<rect x='"^string_of_float x1 ^ "' y='" ^ string_of_float y1 ^
+    "' width='"^ string_of_float (x2-.x1)^
     "' height='"^string_of_float(y2-.y1)^
-    "' style='fill:"^(if o=1 then "black" else "white")^"'/>"
+    "' style='fill:"^(if sub then "white" else "black")^
+    (if inter then "' clip-path='url(#"^id^")"else "" )^
+    "'/>"
   | Circle ((cx, cy), f) -> 
     "<circle cx='"^string_of_float cx^
     "' cy='"^string_of_float cy^
     "' r='"^string_of_float f ^ 
-    "' style='fill: " ^ (if o=1 then "black" else "white")^"' />"
-  | Union (l,r) -> shapehtml l 1^shapehtml r 1
-  | Intersection (l,r) -> shapehtml l 1^shapehtml r 1
-  | Subtraction (l,r) -> shapehtml l 1^shapehtml r 0
+    "' style='fill: " ^ (if sub then "white" else "black")^
+    (if inter then "' clip-path='url(#"^id^")'" else "")^
+    "'/>"
+  | Union (l,r) -> shapehtml l false false "id"^shapehtml r false false ""
+  | Intersection (l,r) -> let id = genID () in 
+    "<defs><clipPath id='"^id^"' >" ^ shapehtml r false false id
+    ^ "</clipPath></defs>" ^ shapehtml l false true id
+  | Subtraction (l,r) -> shapehtml l false false ""^shapehtml r true false ""
 
+let svg s =
+  "<!DOCTYPE html><html><body><svg "^ boxSize s ^ (shapehtml s false false "")            
+  ^" </svg></body></html>"
 ;;
+
 
 
 (* FUNCTION partition *)
