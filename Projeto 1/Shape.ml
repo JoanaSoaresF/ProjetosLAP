@@ -34,9 +34,10 @@ type shape = Rect of point*point
 
 (* EXAMPLES *)
 
-let rect1 = Rect ((0.0, 0.0), (5.0, 2.0));;
-let rect2 = Rect ((2.0, 2.0), (7.0, 7.0));;
+let rect1 = Rect ((0.0, 0.0), (5.0, 2.0))
+let rect2 = Rect ((2.0, 2.0), (7.0, 7.0))
 let shape1 = Union (rect1, rect2);;
+let shape2 = Union (rect1, rect1);;
 
 
 (* FUNCTION hasRect *)
@@ -164,11 +165,12 @@ let rec repetitions a l =
   | x::xs -> (if a=x then 1 else 0) + repetitions a xs
 ;;
 
-let rec listRunner l =
+let rec totalRepetitions l =
   match l with
     [] -> 0
-  |x::xs -> repetitions x xs + listRunner xs
+  |x::xs -> repetitions x xs + totalRepetitions xs
 ;;
+
 
 let rec listShapes s=
   match s with
@@ -181,7 +183,7 @@ let rec listShapes s=
 
 
 
-let countBasicRepetitions s = listRunner (listShapes s) 
+let countBasicRepetitions s = totalRepetitions (listShapes s) 
 
 ;;
 
