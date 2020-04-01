@@ -165,10 +165,11 @@ let rec repetitions a l =
   | x::xs -> (if a=x then 1 else 0) + repetitions a xs
 ;;
 
-let rec totalRepetitions l =
+let rec totalRepetitions l lb =
   match l with
     [] -> 0
-  |x::xs -> repetitions x xs + totalRepetitions xs
+  |x::xs -> let r = repetitions x lb in 
+            (if r=0 then 0 else (if r=1 then 2 else 1 ))+totalRepetitions xs lb
 ;;
 
 
@@ -181,9 +182,15 @@ let rec listShapes s=
   | Subtraction (l,r) -> (listShapes l)@(listShapes r)
 ;;
 
+let rec cleanList l cL=
+   match l with
+    [] -> []
+  | x::xs -> addCL x cL ::cleanList xs (addCL x cL)
 
 
-let countBasicRepetitions s = totalRepetitions (listShapes s) 
+
+
+let countBasicRepetitions s = totalRepetitions (listShapes s) []
 
 ;;
 
@@ -237,8 +244,34 @@ let svg s =
 
 (* FUNCTION partition *)
 
+let rectApart ((tx1,ty1),(bx1,by1)) ((tx2,ty2),(bx2,by2)) =
+  tx1>=bx2 || bx1<=tx2 || ty1>=by2 || by1<=ty2
+;;
+
+let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
+  not(belongsRect (cx,cy) (tx,ty) (bx,by)) &&
+  not(tx=())
+
+
+let rec touch s1 s2=
+    match (s1, s2) with
+      (Rect (t,b), Rect(t2,b2)) -> rectApart s1 s2
+    | (Circle (c,f), Rect (t,b))
+    | (Rect (t,b), Circle (c,f)) -> 
+    | Circle (c,f) -> false
+    | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
+    | Intersection (l,r) -> [Intersection (l,r)]
+    | Subtraction (l,r) ->
+;;
+
+
 let partition s =
-  [s]
+  match s with
+    Rect (t,b) -> [Rect (t, b)]
+  | Circle (c,f) -> [Circle (c, f)]
+  | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
+  | Intersection (l,r) -> [Intersection (l,r)]
+  | Subtraction (l,r) -> [Subtraction (l,r)]
 
 
 ;;
