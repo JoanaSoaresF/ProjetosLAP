@@ -39,6 +39,8 @@ let rect2 = Rect ((2.0, 2.0), (7.0, 7.0))
 let shape1 = Union (rect1, rect2);;
 let shape2 = Union (rect1, rect1);;
 
+let shape3 = Union(shape1, shape1);;
+
 
 (* FUNCTION hasRect *)
 
@@ -159,18 +161,11 @@ let rec grid m n a b = if m = 1
 
 (* FUNCTION countBasicRepetitions *)
 
-let rec repetitions a l =
-  match l with
-    [] -> 0
-  | x::xs -> (if a=x then 1 else 0) + repetitions a xs
-;;
 
-let rec totalRepetitions l =
-  match l with
-    [] -> 0
-  |x::xs -> repetitions x xs + totalRepetitions xs
-;;
 
+let rec count a l = match l with
+    [] -> 0
+  | x::xs -> (if x=a then 1 else 0) + count a xs;;
 
 let rec listShapes s=
   match s with
@@ -181,11 +176,23 @@ let rec listShapes s=
   | Subtraction (l,r) -> (listShapes l)@(listShapes r)
 ;;
 
+let rec elementsRepeated l = match l with
+    [] -> 0
+  |(x,n)::xs -> (if n>1 then 1 else 0) + elementsRepeated xs
+;;
 
 
-let countBasicRepetitions s = totalRepetitions (listShapes s) 
+let countBasicRepetitions s = let allShapes = listShapes s in 
+  let rec occurences l =
+    match l with
+      [] -> []
+    |x::xs -> (x, count x allShapes)::occurences xs
+
+  in elementsRepeated (occurences allShapes)
 
 ;;
+
+let shape4 = Subtraction(shape2, rect1);;
 
 
 (* FUNCTION svg *)
