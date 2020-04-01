@@ -143,13 +143,13 @@ let rec minBound s = match sizeRect s with
 (* FUNCTION grid *)
 
 let rec createLine m n a b  =  let mf = float_of_int m in let nf = float_of_int n in 
-  if (m mod 2)=0 
-  then if n>=4  
-    then Union( Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)), createLine (n-2) m a b)
-    else Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b))
-  else if n>=4  
-  then Union( Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)), createLine (n-2) m a b)
-  else Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b))
+  if not((m mod 2)=0)
+  then (if n>2  
+        then Union( Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)), createLine m (n-2) a b)
+        else Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)))
+  else (if n>2  
+        then Union( Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)), createLine m (n-2) a b)
+        else Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)))
 
 ;;
 
@@ -244,9 +244,34 @@ let svg s =
 
 (* FUNCTION partition *)
 
-let partition s =
-  [s]
-
-
+let rectApart ((tx1,ty1),(bx1,by1)) ((tx2,ty2),(bx2,by2)) =
+  tx1>=bx2 || bx1<=tx2 || ty1>=by2 || by1<=ty2
 ;;
 
+let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
+  not(belongsRect (cx,cy) (tx,ty) (bx,by)) &&
+  not(tx=())
+;;
+
+(*let rec touch s1 s2=
+  match (s1, s2) with
+    (Rect (t,b), Rect(t2,b2)) -> rectApart (t,b) (t2,b2)
+  | (Circle (c,f), Rect (t,b))
+  | (Rect (t,b), Circle (c,f)) -> 
+  | Circle (c,f) -> false
+  | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
+  | Intersection (l,r) -> [Intersection (l,r)]
+  | Subtraction (l,r) ->
+  ;;
+
+
+  let partition s =
+  match s with
+    Rect (t,b) -> [Rect (t, b)]
+  | Circle (c,f) -> [Circle (c, f)]
+  | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
+  | Intersection (l,r) -> [Intersection (l,r)]
+  | Subtraction (l,r) -> [Subtraction (l,r)]
+
+
+  ;;*)
