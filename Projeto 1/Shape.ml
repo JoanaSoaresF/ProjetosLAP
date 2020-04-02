@@ -142,20 +142,20 @@ let rec minBound s = match sizeRect s with
 ;;
 (* FUNCTION grid *)
 
-let rec createLine m n a b  =  let mf = float_of_int m in let nf = float_of_int n in 
+let rec createLine m n a b c =  let mf = float_of_int m in let cf = float_of_int c in 
   if not((m mod 2)=0)
-  then (if n>2  
-        then Union( Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)), createLine m (n-2) a b)
-        else Rect(((nf-.2.)*.a, (mf-.1.)*.b), ((nf-.1.)*.a, mf*.b)))
-  else (if n>2  
-        then Union( Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)), createLine m (n-2) a b)
-        else Rect(((nf-.1.)*.a, (mf-.1.)*.b), (nf*.a, mf*.b)))
+  then (if c<n-3  
+        then Union( Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)), createLine m n a b (c+2))
+        else Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)))
+  else (if c<n-3  
+        then Union( Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)), createLine m n a b (c+2))
+        else Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)))
 
 ;;
 
 let rec grid m n a b = if m = 1
-  then createLine m n a b
-  else Union((createLine m n a b), (grid (m-1) n a b))
+  then createLine m n a b 0
+  else Union((createLine m n a b 0), (grid (m-1) n a b))
 ;;
 
 
@@ -301,20 +301,20 @@ let rec touch s1 s2=
   | (Union (l1,r1), Intersection (l2,r2)) -> (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
   | (Subtraction (l2,r2), Union (l1,r1))-> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
   | (Union (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
-  | (Intersection (l1,r1), Intersection (l2,r2)) -> touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2) 
-| (Subtraction (l2,r2), Intersection (l1,r1)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
-| (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
-| (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
+  | (Intersection (l1,r1), Intersection (l2,r2)) -> touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2
+  | (Subtraction (l2,r2), Intersection (l1,r1)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
+  | (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
+  | (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
 ;;
 
 
 
 
-let partition s =
+let rec partition s =
   match s with
     Rect (t,b) -> [Rect (t, b)]
   | Circle (c,f) -> [Circle (c, f)]
-  | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
+  | Union (l,r) -> (if (touch l r) then [Union(l,r)] else (partition l)@(partition r))
   | Intersection (l,r) -> [Intersection (l,r)]
   | Subtraction (l,r) -> [Subtraction (l,r)]
 
