@@ -10,7 +10,7 @@ Comment:
 
 (*
 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-   80 columns
+80 columns
 *)
 
 
@@ -36,10 +36,10 @@ type shape = Rect of point*point
 
 let rect1 = Rect ((0.0, 0.0), (5.0, 2.0))
 let rect2 = Rect ((2.0, 2.0), (7.0, 7.0))
-let shape1 = Union (rect1, rect2);;
-let shape2 = Union (rect1, rect1);;
-
-let shape3 = Union(shape1, shape1);;
+let shape1 = Union (rect1, rect2)
+let shape2 = Union (rect1, rect1)
+let shape3 = Union(shape1, shape1)
+let shape4 = Subtraction(shape2, rect1);;
 
 
 (* FUNCTION hasRect *)
@@ -192,9 +192,6 @@ let countBasicRepetitions s = let allShapes = listShapes s in
 
 ;;
 
-let shape4 = Subtraction(shape2, rect1);;
-
-
 (* FUNCTION svg *)
 
 let  genID = 
@@ -284,30 +281,30 @@ let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
 let rec touch s1 s2=
   match (s1, s2) with
     (Rect (t1,b1), Rect(t2,b2)) -> rectApart (t1,b1) (t2,b2)
-  | (Circle (c,f), Rect (t,b)) 
+  | (Circle (c,f), Rect (t,b)) -> cApartR (c,f) (t,b)
   | (Rect (t,b), Circle (c,f)) -> cApartR (c,f) (t,b)
   | (Circle (c1,f1), Circle(c2,f2)) -> circleApart (c1,f1) (c2,f2)
-  | (Union (l,r), Rect (t,b))
-  | (Rect (t,b), Union (l,r)) -> (touch (t,b) l) || (touch (t,b) r)
-  | (Intersection (l,r), Rect (t,b))
-  | (Rect (t,b), Intersection (l,r)) -> touch (Rect (t,b)) l && touch (Rect (t,b)) r
-  | (Subtraction (l,r), Rect (t,b))
-  | (Rect (t,b), Subtraction (l,r)) -> touch (Rect (t,b)) l && not(touch (Rect (t,b)) r)
-  | (Union (l,r), Circle (c,f))
-  | (Circle (c,f), Union (l,r)) -> touch (Circle (c,f)) l || touch (Circle (c,f)) r
-  | (Intersection (l,r), Circle (c,f))
-  | (Circle (c,f), Intersection (l,r)) -> touch (Circle (c,f)) l && touch (Circle (c,f)) r
-  | (Subtraction (l,r), Circle (c,f))
-  | (Circle (c,f), Subtraction (l,r)) -> touch (Circle (c,f)) l && not(touch (Circle (c,f)) r)
+  | (Union (l,r), Rect (t,b)) -> touch s2 l || touch s2 r
+  | (Rect(t,b), Union(l,r)) -> touch s1 l || touch s1 r
+  | (Intersection (l,r), Rect (t,b)) -> touch s2 l && touch s2 r
+  | (Rect (t,b), Intersection (l,r)) -> touch s1 l && touch s1 r
+  | (Subtraction (l,r), Rect (t,b)) -> touch s2 l && not(touch s2 r)
+  | (Rect (t,b), Subtraction (l,r)) -> touch s1 l && not(touch s1 r)
+  | (Union (l,r), Circle (c,f)) -> touch s2 l || touch s2 r
+  | (Circle (c,f), Union (l,r)) -> touch s1 l || touch s1 r
+  | (Intersection (l,r), Circle (c,f)) -> touch s2 l && touch s2 r
+  | (Circle (c,f), Intersection (l,r)) -> touch s1 l && touch s1 r
+  | (Subtraction (l,r), Circle (c,f)) -> touch s2 l && not(touch s2 r)
+  | (Circle (c,f), Subtraction (l,r)) -> touch s1 l && not(touch s1 r)
   | (Union (l1,r1), Union (l2,r2)) -> touch l1 l2 || touch l1 r2 || touch r1 l2 || touch r1 r2
-  | (Intersection (l2,r2), Union (l1,r1))
+  | (Intersection (l2,r2), Union (l1,r1)) -> (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
   | (Union (l1,r1), Intersection (l2,r2)) -> (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
-  | (Subtraction (l2,r2), Union (l1,r1))
+  | (Subtraction (l2,r2), Union (l1,r1))-> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
   | (Union (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
   | (Intersection (l1,r1), Intersection (l2,r2)) -> touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2) 
-| (Subtraction (l2,r2), Intersection (l1,r1))
+| (Subtraction (l2,r2), Intersection (l1,r1)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
 | (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
-| (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2)   )
+| (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
 ;;
 
 
