@@ -34,12 +34,6 @@ type shape = Rect of point*point
 
 (* EXAMPLES *)
 
-let rect1 = Rect ((0.0, 0.0), (5.0, 2.0))
-let rect2 = Rect ((2.0, 2.0), (7.0, 7.0))
-let shape1 = Union (rect1, rect2)
-let shape2 = Union (rect1, rect1)
-let shape3 = Union(shape1, shape1)
-let shape4 = Subtraction(shape2, rect1);;
 
 
 (* FUNCTION hasRect *)
@@ -147,7 +141,7 @@ let rec createLine m n a b c =  let mf = float_of_int m in let cf = float_of_int
   then (if c<n-3  
         then Union( Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)), createLine m n a b (c+2))
         else Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)))
-  else (if c<n-3  
+  else (if c<n-2  
         then Union( Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)), createLine m n a b (c+2))
         else Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)))
 
@@ -231,6 +225,7 @@ let  rec shapehtml s sub inter id=
     "<defs><clipPath id='"^id^"' >" ^ shapehtml r false false id
     ^ "</clipPath></defs>" ^ shapehtml l false true id
   | Subtraction (l,r) -> shapehtml l false false ""^shapehtml r true false ""
+
 
 let svg s =
   "<!DOCTYPE html><html><body><svg "^ boxSize s ^ (shapehtml s false false "")            
