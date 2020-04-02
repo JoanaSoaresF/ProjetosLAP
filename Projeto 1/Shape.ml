@@ -70,6 +70,7 @@ let rec countBasic s = (*e os failwith??*)
 
 
 (* FUNCTION belongs *)
+
 let belongsRect p t b =
   match p with
     (px, py) -> match t with
@@ -85,6 +86,8 @@ let belongsCircle p c f =
     (px, py) -> match c with
       (cx, cy) -> Pervasives.sqrt(((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
 ;;
+
+
 let rec belongs p s =
   match s with
     Rect (t,b) -> belongsRect p t b 
@@ -95,10 +98,8 @@ let rec belongs p s =
 ;;
 
 
-
-
-
 (* FUNCTION density*)
+
 let rec density p s =
   match s with
     Rect (t,b) -> if belongs p s then 1 else 0
@@ -123,11 +124,12 @@ let  rec which p s =
 
 ;;
 
+
 (* FUNCTION minBound *)
+
 let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
   ((min x1 x3 , min y1 y3), (max x2 x4, max y2 y4 ))
 ;;
-
 
 let rec sizeRect s = 
   match s with 
@@ -139,10 +141,13 @@ let rec sizeRect s =
 
 ;;
 
+
 let rec minBound s = match sizeRect s with
     (t,b) -> Rect(t,b)
 
 ;;
+
+
 (* FUNCTION grid *)
 
 let rec createLine m n a b c =  let mf = float_of_int m in let cf = float_of_int c in 
@@ -156,6 +161,7 @@ let rec createLine m n a b c =  let mf = float_of_int m in let cf = float_of_int
 
 ;;
 
+
 let rec grid m n a b = if m = 1
   then createLine m n a b 0
   else Union((createLine m n a b 0), (grid (m-1) n a b))
@@ -164,11 +170,10 @@ let rec grid m n a b = if m = 1
 
 (* FUNCTION countBasicRepetitions *)
 
-
-
 let rec count a l = match l with
     [] -> 0
-  | x::xs -> (if x=a then 1 else 0) + count a xs;;
+  | x::xs -> (if x=a then 1 else 0) + count a xs
+;;
 
 let rec listShapes s=
   match s with
@@ -195,6 +200,7 @@ let countBasicRepetitions s = let allShapes = listShapes s in
 
 ;;
 
+
 (* FUNCTION svg *)
 
 let  genID = 
@@ -203,6 +209,7 @@ let  genID =
     idBase := !idBase + 1;
     "id" ^ (Printf.sprintf "%04d" !idBase)
 ;;
+
 let boxSize s = match minBound s with
     Rect ((x1, y1),(x2,y2)) ->" width='"^ string_of_float (x2)^
                               "' height='"^string_of_float(y2)^
@@ -240,7 +247,6 @@ let svg s =
   "<!DOCTYPE html><html><body><svg "^ boxSize s ^ (shapehtml s false false "")            
   ^" </svg></body></html>"
 ;;
-
 
 
 (* FUNCTION partition *)
@@ -310,8 +316,6 @@ let rec touch s1 s2=
   | (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
   | (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
 ;;
-
-
 
 
 let rec partition s =
