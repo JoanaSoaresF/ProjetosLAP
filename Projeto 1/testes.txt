@@ -1,0 +1,54 @@
+
+%COMMAND
+ocaml -noprompt -open Shape -open Extra Shape.cmo Extra.cmo | tail -n +3
+%end
+
+%PREDEFINITIONS
+let rect1 = Rect ((0.0, 0.0), (0.0, 0.0)) ;;
+let rect2 = Rect ((2.0, 2.0), (7.0, 7.0)) ;;
+let circle = Circle ((1.0, 1.0), 0.1) ;;
+let shape1 = Union (rect1, rect2) ;;
+let shape2 = Union (shape1, shape1) ;;
+let shape3 = Union (circle, shape2) ;;
+
+myRUSort : Shape -> Shape list
+  Requires only Rectangles and Unions; extract all Rectangles; sort.
+%
+
+%T01
+countBasic shape3;;
+%end
+
+%T02
+belongs (0.0, 0.0) shape3;;
+belongs (10.0, 10.0) shape3;;
+%end
+
+%T03
+density (0.0, 0.0) shape3;;
+%end
+
+
+%T04
+which (0.0, 0.0) shape3;;
+%end
+
+%T05
+minBound shape3;;
+%end
+
+%T06
+myRUSort (grid 2 2 1.0 2.0);;
+%end
+
+%T07
+countBasicRepetitions shape3;;
+%end
+
+%T08
+svg shape3 <> "";;
+%end
+
+%T09
+partition rect1;;
+%end
