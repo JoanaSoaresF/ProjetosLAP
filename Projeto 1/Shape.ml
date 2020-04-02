@@ -249,27 +249,35 @@ let rectApart ((tx1,ty1),(bx1,by1)) ((tx2,ty2),(bx2,by2)) =
 ;;
 
 let circleApart ((cx1,cy1),f1) ((cx2,cy2),f2) =
-  Pervasives.sqrt(((cx1-.cx2)*.(cx1-.cx2)) +. ((cy1-.cy2)*.(cy2-.cy2)))>(f1+f2)
+  Pervasives.sqrt(((cx1-.cx2)*.(cx1-.cx2)) +. ((cy1-.cy2)*.(cy2-.cy2)))>(f1+.f2)
 ;;
 
 let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
   not(belongsRect (cx,cy) (tx,ty) (bx,by)) &&
-  (if(0<(3*(cx*cx)+4*((ty*ty)+(ty*cy)+(cy*cy)-(f*f))) then true 
-  else
-  ((tx>(cx+Pervasives.sqrt(cx*cx-4*((cx*cx)+(ty-cy)*(ty-cy)-(f*f))))/2) || (bx<(cx+Pervasives.sqrt(cx*cx-4*((cx*cx)+(ty-cy)*(ty-cy)-(f*f))))/2)) &&
-  ((tx>(cx-Pervasives.sqrt(cx*cx-4*((cx*cx)+(ty-cy)*(ty-cy)-(f*f))))/2) || (bx<(cx-Pervasives.sqrt(cx*cx-4*((cx*cx)+(ty-cy)*(ty-cy)-(f*f))))/2)))&&
-  (if(0<(3*(cx*cx)+4*((by*by)+(by*cy)+(cy*cy)-(f*f))) then true 
-  else
-  ((tx>(cx+Pervasives.sqrt(cx*cx-4*((cx*cx)+(by-cy)*(by-cy)-(f*f))))/2) || (bx<(cx+Pervasives.sqrt(cx*cx-4*((cx*cx)+(by-cy)*(by-cy)-(f*f))))/2)) &&
-  ((tx>(cx-Pervasives.sqrt(cx*cx-4*((cx*cx)+(by-cy)*(by-cy)-(f*f))))/2) || (bx<(cx-Pervasives.sqrt(cx*cx-4*((cx*cx)+(by-cy)*(by-cy)-(f*f))))/2))) &&
-  (if(0<(3*(cy*cy)+4*((tx*tx)+(tx*cx)+(cx*cx)-(f*f))) then true 
-  else
-  ((ty>(cy+Pervasives.sqrt(cy*cy-4*((cy*cy)+(tx-cx)*(tx-cx)-(f*f))))/2) || (by<(cx+Pervasives.sqrt(cy*cy-4*((cy*cy)+(tx-cx)*(tx-cx)-(f*f))))/2)) &&
-  ((ty>(cy-Pervasives.sqrt(cy*cy-4*((cy*cy)+(tx-cx)*(tx-cx)-(f*f))))/2) || (by<(cx-Pervasives.sqrt(cy*cy-4*((cy*cy)+(tx-cx)*(tx-cx)-(f*f))))/2))) && 
-  (if (0<(3*(cy*cy)+4*((bx*bx)+(bx*cx)+(cx*cx)-(f*f))) then true 
-  else
-  ((ty>(cy+Pervasives.sqrt(cy*cy-4*((cy*cy)+(bx-cx)*(bx-cx)-(f*f))))/2) || (by<(cx+Pervasives.sqrt(cy*cy-4*((cy*cy)+(bx-cx)*(bx-cx)-(f*f))))/2)) &&
-  ((ty>(cy-Pervasives.sqrt(cy*cy-4*((cy*cy)+(bx-cx)*(bx-cx)-(f*f))))/2) || (by<(cx-Pervasives.sqrt(cy*cy-4*((cy*cy)+(bx-cx)*(bx-cx)-(f*f))))/2)))
+  (if (0.<(3.*.(cx*.cx)+.4.*.((ty*.ty)+.(ty*.cy)+.(cy*.cy)-.(f*.f)))) then true 
+   else
+     ((tx>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.) 
+      || (bx<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.)) 
+     && ((tx>(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.) 
+         || (bx<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.)))&&
+  (if(0.<(3.*.(cx*.cx)+.4.*.((by*.by)+.(by*.cy)+.(cy*.cy)-.(f*.f)))) then true 
+   else
+     ((tx>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.) 
+      || (bx<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.)) 
+     && ((tx>(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.) 
+         || (bx<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.))) &&
+  (if(0.<(3.*.(cy*.cy)+.4.*.((tx*.tx)+.(tx*.cx)+.(cx*.cx)-.(f*.f)))) then true 
+   else
+     ((ty>(cy+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f))))/.2.) 
+      || (by<(cx+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f))))/.2.)) 
+     && ((ty>(cy-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f))))/.2.) 
+         || (by<(cx-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f)))/.2.)))) && 
+  (if (0.<(3.*.(cy*.cy)+.4.*.((bx*.bx)+.(bx*.cx)+.(cx*.cx)-.(f*.f)))) then true 
+   else
+     ((ty>(cy+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.) 
+      || (by<(cx+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.)) 
+     && ((ty>(cy-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.) 
+         || (by<(cx-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.)))
 
 ;;
 
@@ -278,9 +286,9 @@ let rec touch s1 s2=
     (Rect (t1,b1), Rect(t2,b2)) -> rectApart (t1,b1) (t2,b2)
   | (Circle (c,f), Rect (t,b)) 
   | (Rect (t,b), Circle (c,f)) -> cApartR (c,f) (t,b)
-  | (Circle (c1,f1), Circle(c2,f2) -> circleApart (c1,f1) (c2,f2)
+  | (Circle (c1,f1), Circle(c2,f2)) -> circleApart (c1,f1) (c2,f2)
   | (Union (l,r), Rect (t,b))
-  | (Rect (t,b), Union (l,r)) -> touch (Rect (t,b)) l || touch (Rect (t,b)) r
+  | (Rect (t,b), Union (l,r)) -> (touch (t,b) l) || (touch (t,b) r)
   | (Intersection (l,r), Rect (t,b))
   | (Rect (t,b), Intersection (l,r)) -> touch (Rect (t,b)) l && touch (Rect (t,b)) r
   | (Subtraction (l,r), Rect (t,b))
@@ -295,21 +303,23 @@ let rec touch s1 s2=
   | (Intersection (l2,r2), Union (l1,r1))
   | (Union (l1,r1), Intersection (l2,r2)) -> (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
   | (Subtraction (l2,r2), Union (l1,r1))
-  | (Union (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2)) (*incompleto para intercecoes da união e l2 meio incluidas em r2*)
-  | (Intersection (l1,r1), Intersection (l2,r2)) -> touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2) (** *)
-  | (Subtraction (l2,r2), Intersection (l1,r1))
-  | (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
-  | (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2)   (** *))
+  | (Union (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
+  | (Intersection (l1,r1), Intersection (l2,r2)) -> touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2) 
+| (Subtraction (l2,r2), Intersection (l1,r1))
+| (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
+| (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2)   )
 ;;
 
 
-  let partition s =
-    match s with
-      Rect (t,b) -> [Rect (t, b)]
-    | Circle (c,f) -> [Circle (c, f)]
-    | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
-    | Intersection (l,r) -> [Intersection (l,r)]
-    | Subtraction (l,r) -> [Subtraction (l,r)]
 
 
-  ;;
+let partition s =
+  match s with
+    Rect (t,b) -> [Rect (t, b)]
+  | Circle (c,f) -> [Circle (c, f)]
+  | Union (l,r) -> if (touch l r) then Union(l,r) else partition l :: partition r
+  | Intersection (l,r) -> [Intersection (l,r)]
+  | Subtraction (l,r) -> [Subtraction (l,r)]
+
+
+;;
