@@ -284,9 +284,9 @@ let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
 
 let rec touch s1 s2=
   match (s1, s2) with
-    (Rect (t1,b1), Rect(t2,b2)) -> rectApart (t1,b1) (t2,b2)
-  | (Circle (c,f), Rect (t,b)) -> cApartR (c,f) (t,b)
-  | (Rect (t,b), Circle (c,f)) -> cApartR (c,f) (t,b)
+    (Rect (t1,b1), Rect(t2,b2)) -> not (rectApart (t1,b1) (t2,b2))
+  | (Circle (c,f), Rect (t,b)) -> not (cApartR (c,f) (t,b))
+  | (Rect (t,b), Circle (c,f)) -> not (cApartR (c,f) (t,b))
   | (Circle (c1,f1), Circle(c2,f2)) -> circleApart (c1,f1) (c2,f2)
   | (Union (l,r), Rect (t,b)) -> touch s2 l || touch s2 r
   | (Rect(t,b), Union(l,r)) -> touch s1 l || touch s1 r
