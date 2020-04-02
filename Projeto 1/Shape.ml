@@ -33,7 +33,16 @@ type shape = Rect of point*point
 
 
 (* EXAMPLES *)
-
+let rect1 = Rect ((1., 1.), (5., 5.)) ;;
+let rect2 = Rect ((2.0, 2.0), (7.0, 7.0)) ;;
+let rect3 = Rect ((3., 3.), (4., 4.)) ;;
+let circle1 = Circle ((1.0, 1.0), 1.) ;;
+let circle2 = Circle ((6.0, 5.0), 3.) ;;
+let shape1 = Union (rect1, rect2) ;;
+let shape2 = Union (shape1, shape1) ;;
+let shape3 = Union (circle1, shape2) ;;
+let shape4 = Intersection(shape1, circle2);;
+let shape5 = Subtraction(circle2, shape4);;
 
 
 (* FUNCTION hasRect *)
@@ -123,7 +132,7 @@ let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) =
 let rec sizeRect s = 
   match s with 
     Rect (t,b) -> (t,b)
-  | Circle ((cx, cy),f) -> ((cx-.f, cy+.f) , (cx+.f, cy-.f))
+  | Circle ((cx, cy),f) -> ((cx-.f, cy-.f) , (cx+.f, cy+.f))
   | Union (l,r) 
   | Intersection (l,r) 
   | Subtraction (l,r) -> maxDimUnion (sizeRect l)  (sizeRect  r)
@@ -220,11 +229,11 @@ let  rec shapehtml s sub inter id=
     "' style='fill: " ^ (if sub then "white" else "black")^
     (if inter then "' clip-path='url(#"^id^")'" else "")^
     "'/>"
-  | Union (l,r) -> shapehtml l false false "id"^shapehtml r false false ""
+  | Union (l,r) -> shapehtml l sub inter id^shapehtml r sub inter id
   | Intersection (l,r) -> let id = genID () in 
-    "<defs><clipPath id='"^id^"' >" ^ shapehtml r false false id
-    ^ "</clipPath></defs>" ^ shapehtml l false true id
-  | Subtraction (l,r) -> shapehtml l false false ""^shapehtml r true false ""
+    "<defs><clipPath id='"^id^"' >" ^ shapehtml r sub false id
+    ^ "</clipPath></defs>" ^ shapehtml l sub true id
+  | Subtraction (l,r) -> shapehtml l false inter ""^shapehtml r true inter ""
 
 
 let svg s =

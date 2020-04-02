@@ -1,8 +1,15 @@
 <!DOCTYPE html>
 <html>
 
-<body><svg width='2.' height='4.'>
-        <rect x='0.' y='2.' width='1.' height='2.' style='fill:black' />
-        <rect x='1.' y='0.' width='1.' height='2.' style='fill:black' /> </svg></body>
+<body><svg width='9.' height='10.'>
+                <circle cx='6.' cy='5.' r='3.' style='fill: black' />
+                <defs>
+                        <clipPath id='id0006'>
+                                <circle cx='6.' cy='5.' r='3.' style='fill: white' />
+                        </clipPath>
+                </defs>
+                <rect x='1.' y='1.' width='4.' height='4.' style='fill:white' clip-p ath='url(#id0006)' />
+                <rect x='2.' y='2.' width='5.' height='5.' style='fill:white' clip-path='url(#id0006)' />
+        </svg></body>
 
 </html>
