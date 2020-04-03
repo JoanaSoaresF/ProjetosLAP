@@ -55,25 +55,30 @@ let rect5 = Rect ((1., 1.), (4., 4.)) ;;
 let circle4 = Circle ((4.0, 4.0), 1.5) ;;
 let shape11 = Subtraction(rect5, circle4);;
 
-let circle5 = Circle ((10.0, 3.50), 6.) ;;
+let circle5 = Circle ((10.0, 3.50), 3.) ;;
 let rect6 = Rect ((8., 3.), (12., 5.)) ;;
 let shape12 = Subtraction(circle5, rect6);;
 let shape17 = Union(shape11, shape12);;
 
 let rect7 = Rect ((2., 10.), (7., 13.)) ;;
-let circle6 = Circle ((5.0, 13.0), 1.7) ;;
+let circle6 = Circle ((5.0, 13.0), 2.) ;;
 let shape13 = Intersection(rect7, circle6);;
 
 let rect8 = Rect ((5., 11.), (10., 16.)) ;;
-let circle7 = Circle ((6.0, 12.0), 2.) ;;
+let circle7 = Circle ((6.0, 12.0), 1.5) ;;
 let shape14 = Intersection(rect8, circle7);;
 let shape15 = Intersection(shape14, shape13);;
-let shape16 = Union(shape15,shape17);;
 
-let rect9 = Rect ((100.,100.), (200., 200.)) ;;
-let circle8 = Circle((1000.,1000.), 850.);;
-let shape17 = Union(rect9, circle8);;
-let shape18 = Union(shape16, shape17);;
+let rect9 = Rect ((50.,50.), (100., 89.)) ;;
+let circle8 = Circle((50.,50.), 8.5);;
+let shape24 = Union(rect9, circle8);;
+let shape18 = Union(shape15, shape17);;
+let shape22 = Union(shape24, shape18);;
+
+let shape19 = Intersection(rect1, rect2);;
+let shape20 = Intersection(rect2, circle2);;
+let shape21 = Intersection(shape19, shape20);;
+
 
 
 (* FUNCTION hasRect *)
@@ -270,11 +275,12 @@ let  rec shapehtml s sub inter id=
     (if inter then "' clip-path='url(#"^id^")" else "")^
     "'/>"
   | Union (l,r) -> shapehtml l sub inter id^shapehtml r sub inter id
-  | Intersection (l,r) -> let id = genID () in 
-    "<defs><clipPath id='"^id^"' >" ^ shapehtml r sub inter id
-    ^ "</clipPath></defs>" ^ shapehtml l sub (not inter) id
+  | Intersection (l,r) -> let newid = genID () in 
+    "<defs><clipPath id='"^newid^"' >" ^ shapehtml r sub true id 
+    ^ "</clipPath></defs>" ^ shapehtml l sub true newid
   | Subtraction (l,r) -> shapehtml l sub inter id^shapehtml r (not sub) inter id
 
+;;
 
 let svg s =
   "<!DOCTYPE html><html><body><svg "^ boxSize s ^ (shapehtml s false false "")            
