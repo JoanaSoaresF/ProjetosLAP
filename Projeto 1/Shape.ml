@@ -51,6 +51,15 @@ let shape8 = Subtraction(shape4, shape4);;
 let shape9 = Subtraction(circle3, rect4);;
 let shape10 = Subtraction(shape4, shape9);;
 
+let c1 = Circle((2.5,4.5), 1.5)
+let c2 = Circle((4.,4.), 4.)
+let r1 = Rect((3.,1.), (6., 4.))
+let r2 = Rect((2.,5.), (4.,7.))
+let s1 = Subtraction(r1, c1)
+let s2 = Subtraction(c2, r2)
+let s3 = Intersection(s1, s2);;
+
+let shape30 = Intersection(shape9, shape5);;
 let rect5 = Rect ((1., 1.), (4., 4.)) ;;
 let circle4 = Circle ((4.0, 4.0), 1.5) ;;
 let shape11 = Subtraction(rect5, circle4);;
@@ -109,7 +118,7 @@ let rec countBasic s = (*e os failwith??*)
 
 let belongsRect (px, py) t b =
   match t, b with
-    (tx, ty), (bx, by)  -> px>=tx && py>=ty && px<=bx && py<=by
+    (tx, ty), (bx, by) -> px>=tx && py>=ty && px<=bx && py<=by
 ;;
 
 let belongsCircle (px, py) c f =
@@ -183,13 +192,13 @@ let rec minBound s = match sizeRect s with
 let rec createLine m n a b c =  let mf = float_of_int m in 
   let cf = float_of_int c in 
   if (m mod 2)=0
-  then (if c<n-3  
+  then (if c<n-2  
         then Union( 
             Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)), 
             createLine m n a b (c+2))
         else 
           Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)))
-  else (if c<n-2  
+  else (if c<n-3
         then Union( 
             Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)), 
             createLine m n a b (c+2))
@@ -298,32 +307,35 @@ let circleApart ((cx1,cy1),f1) ((cx2,cy2),f2) =
   Pervasives.sqrt(((cx1-.cx2)*.(cx1-.cx2)) +. ((cy1-.cy2)*.(cy2-.cy2)))>(f1+.f2)
 ;;
 
+let circleTouchLine ((cx,cy),f) xy =
+  0.<(3.*.(cx*.cx)+.4.*.((xy*.xy)+.(xy*.cy)+.(cy*.cy)-.(f*.f)))
+;;
+
+let circleTouchLineBetweenAB  ((cx,cy),f) xy a b =
+  ((a>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
+   || (b<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.)) 
+  && ((a>(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
+      || (b<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.))
+;;
+
 let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
   not(belongsRect (cx,cy) (tx,ty) (bx,by)) &&
-  (if (0.<(3.*.(cx*.cx)+.4.*.((ty*.ty)+.(ty*.cy)+.(cy*.cy)-.(f*.f)))) then true 
+  (if (circleTouchLine ((cx,cy),f) ty) 
+   then true 
+   else 
+     circleTouchLineBetweenAB ((cx,cy),f) ty tx bx) &&
+  (if(circleTouchLine ((cx,cy),f) by) 
+   then true 
    else
-     ((tx>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.) 
-      || (bx<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.)) 
-     && ((tx>(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.) 
-         || (bx<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(ty-.cy)*.(ty-.cy)-.(f*.f))))/.2.)))&&
-  (if(0.<(3.*.(cx*.cx)+.4.*.((by*.by)+.(by*.cy)+.(cy*.cy)-.(f*.f)))) then true 
+     circleTouchLineBetweenAB ((cx,cy),f) by tx bx) &&
+  (if(circleTouchLine ((cx,cy),f) tx) 
+   then true 
    else
-     ((tx>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.) 
-      || (bx<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.)) 
-     && ((tx>(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.) 
-         || (bx<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(by-.cy)*.(by-.cy)-.(f*.f))))/.2.))) &&
-  (if(0.<(3.*.(cy*.cy)+.4.*.((tx*.tx)+.(tx*.cx)+.(cx*.cx)-.(f*.f)))) then true 
+     circleTouchLineBetweenAB ((cx,cy),f) tx ty by) && 
+  (if (circleTouchLine ((cx,cy),f) bx) 
+   then true 
    else
-     ((ty>(cy+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f))))/.2.) 
-      || (by<(cx+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f))))/.2.)) 
-     && ((ty>(cy-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f))))/.2.) 
-         || (by<(cx-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(tx-.cx)*.(tx-.cx)-.(f*.f)))/.2.)))) && 
-  (if (0.<(3.*.(cy*.cy)+.4.*.((bx*.bx)+.(bx*.cx)+.(cx*.cx)-.(f*.f)))) then true 
-   else
-     ((ty>(cy+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.) 
-      || (by<(cx+.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.)) 
-     && ((ty>(cy-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.) 
-         || (by<(cx-.Pervasives.sqrt(cy*.cy-.4.*.((cy*.cy)+.(bx-.cx)*.(bx-.cx)-.(f*.f))))/.2.)))
+     circleTouchLineBetweenAB ((cx,cy),f) bx ty by)
 
 ;;
 
