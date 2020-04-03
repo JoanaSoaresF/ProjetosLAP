@@ -51,7 +51,7 @@ let shape8 = Subtraction(shape4, shape4);;
 let shape9 = Subtraction(circle3, rect4);;
 let shape10 = Subtraction(shape4, shape9);;
 
-let c1 = Circle((2.5,4.5), 1.5)
+let c1 = Circle((4.5,2.5), 1.)
 let c2 = Circle((4.,4.), 4.)
 let r1 = Rect((3.,1.), (6., 4.))
 let r2 = Rect((2.,5.), (4.,7.))
