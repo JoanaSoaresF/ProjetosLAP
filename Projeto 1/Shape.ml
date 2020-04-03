@@ -71,20 +71,14 @@ let rec countBasic s = (*e os failwith??*)
 
 (* FUNCTION belongs *)
 
-let belongsRect p t b =
-  match p with
-    (px, py) -> match t with
-      (tx, ty) -> if px>=tx && py>=ty 
-      then match b with
-          (bx, by) -> px<=bx && py<=by
-      else
-        false
+let belongsRect (px, py) t b =
+  match t, b with
+    (tx, ty), (bx, by)  -> px>=tx && py>=ty && px<=bx && py<=by
 ;;
 
-let belongsCircle p c f =
-  match p with
-    (px, py) -> match c with
-      (cx, cy) -> Pervasives.sqrt(((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
+let belongsCircle (px, py) c f =
+  match c with
+    (cx, cy) -> Pervasives.sqrt(((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
 ;;
 
 
@@ -150,16 +144,24 @@ let rec minBound s = match sizeRect s with
 
 (* FUNCTION grid *)
 
-let rec createLine m n a b c =  let mf = float_of_int m in let cf = float_of_int c in 
-  if not((m mod 2)=0)
+let rec createLine m n a b c =  let mf = float_of_int m in 
+  let cf = float_of_int c in 
+  if (m mod 2)=0
   then (if c<n-3  
-        then Union( Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)), createLine m n a b (c+2))
-        else Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)))
+        then Union( 
+            Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)), 
+            createLine m n a b (c+2))
+        else 
+          Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)))
   else (if c<n-2  
-        then Union( Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)), createLine m n a b (c+2))
-        else Rect(((cf)*.a, (mf-.1.)*.b), ((cf+.1.)*.a, mf*.b)))
+        then Union( 
+            Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)), 
+            createLine m n a b (c+2))
+        else 
+          Rect(((cf+.1.)*.a, (mf-.1.)*.b), ((cf+.2.)*.a, mf*.b)))
 
 ;;
+
 
 
 let rec grid m n a b = if m = 1
@@ -234,7 +236,7 @@ let  rec shapehtml s sub inter id=
     "' cy='"^string_of_float cy^
     "' r='"^string_of_float f ^ 
     "' style='fill: " ^ (if sub then "white" else "black")^
-    (if inter then "' clip-path='url(#"^id^")'" else "")^
+    (if inter then "' clip-path='url(#"^id^")" else "")^
     "'/>"
   | Union (l,r) -> shapehtml l sub inter id^shapehtml r sub inter id
   | Intersection (l,r) -> let id = genID () in 
@@ -306,15 +308,24 @@ let rec touch s1 s2=
   | (Circle (c,f), Intersection (l,r)) -> touch s1 l && touch s1 r
   | (Subtraction (l,r), Circle (c,f)) -> touch s2 l && not(touch s2 r)
   | (Circle (c,f), Subtraction (l,r)) -> touch s1 l && not(touch s1 r)
-  | (Union (l1,r1), Union (l2,r2)) -> touch l1 l2 || touch l1 r2 || touch r1 l2 || touch r1 r2
-  | (Intersection (l2,r2), Union (l1,r1)) -> (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
-  | (Union (l1,r1), Intersection (l2,r2)) -> (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
-  | (Subtraction (l2,r2), Union (l1,r1))-> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
-  | (Union (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
-  | (Intersection (l1,r1), Intersection (l2,r2)) -> touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2
-  | (Subtraction (l2,r2), Intersection (l1,r1)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
-  | (Intersection (l1,r1), Subtraction (l2,r2)) -> (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
-  | (Subtraction (l1,r1), Subtraction (l2,r2)) -> touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
+  | (Union (l1,r1), Union (l2,r2)) -> 
+    touch l1 l2 || touch l1 r2 || touch r1 l2 || touch r1 r2
+  | (Intersection (l2,r2), Union (l1,r1)) -> 
+    (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
+  | (Union (l1,r1), Intersection (l2,r2)) -> 
+    (touch l1 l2 || touch l1 r2) && (touch r1 l2 || touch r1 r2)
+  | (Subtraction (l2,r2), Union (l1,r1))-> 
+    (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
+  | (Union (l1,r1), Subtraction (l2,r2)) -> 
+    (touch l1 l2 && not(touch l1 r2)) || (touch r1 l2 && not(touch r1 r2))
+  | (Intersection (l1,r1), Intersection (l2,r2)) ->
+    touch l1 l2 && touch l1 r2 && touch r1 l2 && touch r1 r2
+  | (Subtraction (l2,r2), Intersection (l1,r1)) -> 
+    (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
+  | (Intersection (l1,r1), Subtraction (l2,r2)) -> 
+    (touch l1 l2 && not(touch l1 r2)) && (touch r1 l2 && not(touch r1 r2))
+  | (Subtraction (l1,r1), Subtraction (l2,r2)) -> 
+    touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
 ;;
 
 
@@ -322,7 +333,8 @@ let rec partition s =
   match s with
     Rect (t,b) -> [Rect (t, b)]
   | Circle (c,f) -> [Circle (c, f)]
-  | Union (l,r) -> (if (touch l r) then [Union(l,r)] else (partition l)@(partition r))
+  | Union (l,r) -> 
+    (if (touch l r) then [Union(l,r)] else (partition l)@(partition r))
   | Intersection (l,r) -> [Intersection (l,r)]
   | Subtraction (l,r) -> [Subtraction (l,r)]
 
