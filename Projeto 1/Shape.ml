@@ -36,13 +36,20 @@ type shape = Rect of point*point
 let rect1 = Rect ((1., 1.), (5., 5.)) ;;
 let rect2 = Rect ((2.0, 2.0), (7.0, 7.0)) ;;
 let rect3 = Rect ((3., 3.), (4., 4.)) ;;
+let rect4 = Rect ((6., 4.), (7., 5.)) ;;
 let circle1 = Circle ((1.0, 1.0), 1.) ;;
 let circle2 = Circle ((6.0, 5.0), 3.) ;;
+let circle3 = Circle ((6.0, 5.0), 1.) ;;
 let shape1 = Union (rect1, rect2) ;;
 let shape2 = Union (shape1, shape1) ;;
 let shape3 = Union (circle1, shape2) ;;
 let shape4 = Intersection(shape1, circle2);;
 let shape5 = Subtraction(circle2, shape4);;
+let shape6 = Union(circle1, rect1);;
+let shape7 = Subtraction(shape4, shape6);;
+let shape8 = Subtraction(shape4, shape4);;
+let shape9 = Subtraction(circle3, rect4);;
+let shape10 = Subtraction(shape4, shape9);;
 
 
 (* FUNCTION hasRect *)
@@ -240,9 +247,9 @@ let  rec shapehtml s sub inter id=
     "'/>"
   | Union (l,r) -> shapehtml l sub inter id^shapehtml r sub inter id
   | Intersection (l,r) -> let id = genID () in 
-    "<defs><clipPath id='"^id^"' >" ^ shapehtml r sub false id
-    ^ "</clipPath></defs>" ^ shapehtml l sub true id
-  | Subtraction (l,r) -> shapehtml l false inter ""^shapehtml r true inter ""
+    "<defs><clipPath id='"^id^"' >" ^ shapehtml r sub inter id
+    ^ "</clipPath></defs>" ^ shapehtml l sub (not inter) id
+  | Subtraction (l,r) -> shapehtml l sub inter id^shapehtml r (not sub) inter id
 
 
 let svg s =
