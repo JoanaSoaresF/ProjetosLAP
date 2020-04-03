@@ -51,6 +51,30 @@ let shape8 = Subtraction(shape4, shape4);;
 let shape9 = Subtraction(circle3, rect4);;
 let shape10 = Subtraction(shape4, shape9);;
 
+let rect5 = Rect ((1., 1.), (4., 4.)) ;;
+let circle4 = Circle ((4.0, 4.0), 1.5) ;;
+let shape11 = Subtraction(rect5, circle4);;
+
+let circle5 = Circle ((10.0, 3.50), 6.) ;;
+let rect6 = Rect ((8., 3.), (12., 5.)) ;;
+let shape12 = Subtraction(circle5, rect6);;
+let shape17 = Union(shape11, shape12);;
+
+let rect7 = Rect ((2., 10.), (7., 13.)) ;;
+let circle6 = Circle ((5.0, 13.0), 1.7) ;;
+let shape13 = Intersection(rect7, circle6);;
+
+let rect8 = Rect ((5., 11.), (10., 16.)) ;;
+let circle7 = Circle ((6.0, 12.0), 2.) ;;
+let shape14 = Intersection(rect8, circle7);;
+let shape15 = Intersection(shape14, shape13);;
+let shape16 = Union(shape15,shape17);;
+
+let rect9 = Rect ((100.,100.), (200., 200.)) ;;
+let circle8 = Circle((1000.,1000.), 850.);;
+let shape17 = Union(rect9, circle8);;
+let shape18 = Union(shape16, shape17);;
+
 
 (* FUNCTION hasRect *)
 
