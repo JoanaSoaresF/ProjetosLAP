@@ -61,13 +61,13 @@ let rec countBasic s = (*e os failwith??*)
 
 (* FUNCTION belongs *)
 
-(* Checks if a point (px, py) belongs in the Rect(t,b) *)
+(* Checks if a point (px, py) belongs to the Rect(t,b) *)
 let belongsRect (px, py) t b =
   match t, b with
     (tx, ty), (bx, by) -> px>=tx && py>=ty && px<=bx && py<=by
 ;;
 
-(* Checks if a point (px, py) belongs in the Circle(c, f) *)
+(* Checks if a point (px, py) belongs to the Circle(c, f) *)
 let belongsCircle (px, py) c f =
   match c with
     (cx, cy) -> Pervasives.sqrt(((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
@@ -138,7 +138,7 @@ let rec minBound s = match sizeRect s with
 
 (* FUNCTION grid *)
 
-(*Creates a line of union of n rectangles with dimensions axb. 
+(*Creates a line of union of rectangles with dimensions axb. 
   c identifies the column to start creating the rectangle *)
 let rec createLine m n a b c =  let mf = float_of_int m in 
   let cf = float_of_int c in 
@@ -184,7 +184,7 @@ let rec listShapes s=
   | Subtraction (l,r) -> (listShapes l)@(listShapes r)
 ;;
 
-(* Checks the number of repetitions by cheching a n value of a list os tuples
+(* Checks the number of repetitions by checking a n value of a list of tuples
    The n value indicates the number os repetitions of that element*)
 let rec elementsRepeated l = match l with
     [] -> 0
@@ -274,6 +274,7 @@ let circleApart ((cx1,cy1),f1) ((cx2,cy2),f2) =
 let circleTouchLine ((cx,cy),f) xy =
   0.<(3.*.(cx*.cx)+.4.*.((xy*.xy)+.(xy*.cy)+.(cy*.cy)-.(f*.f)))
 ;;
+
 (*Checks if a circle intersects a line between points a and b*)
 let circleTouchLineBetweenAB  ((cx,cy),f) xy a b =
   ((a>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
@@ -343,10 +344,23 @@ let rec touch s1 s2=
     touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
 ;;
 
+
 (*This function has limitations, does not work for all cases:
-
-
-
+    If the construction of the shape s is based on first defining seperate shapes 
+  and then use union to unite them, it works.
+    However, if at the time of the union(l,r), there are parts from the left that 
+  touch somewhere r, it will count only as one partition list element.  
+    We thought ways of avoyding this, like the use of matrixes,
+  however it can be imprecise and lose some relationships inside shape s.
+    Another idea we had is decomposing all the shape s in basic shapes and then joining 
+  "island by island" everything together. 
+    Once again, relationships would NOT be conserved. So thinking about pros, and cons,
+  this seemed to be the more correct way.
+    The user may want to preserved the relationships he established so, this does that,
+  it parts the shape anytime it is possible having this relationships as a first priority.
+    One last error of this implementation is that the subtraction have some issues, 
+  however we would be pleased to explain them personaly, or in some other time, email, zoom, etc. 
+  Without a visual help it is just impossible to explain.
 *)
 let rec partition s =
   match s with
@@ -356,6 +370,5 @@ let rec partition s =
     (if (touch l r) then [Union(l,r)] else (partition l)@(partition r))
   | Intersection (l,r) -> [Intersection (l,r)]
   | Subtraction (l,r) -> [Subtraction (l,r)]
-
 
 ;;
