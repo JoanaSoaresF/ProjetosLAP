@@ -193,8 +193,9 @@ let rec elementsRepeated l = match l with
 
 
 let countBasicRepetitions s = let allShapes = listShapes s in 
-  let rec occurences l = (*Computes a list of tuples (x, n) where x is the element and
-                           n the number os times that the elemnent x occurs in the list l*)
+  let rec occurences l = 
+    (*Computes a list of tuples (x, n) where x is the element and
+      n the number os times that the elemnent x occurs in the list l*)
     match l with
       [] -> []
     |x::xs -> (x, count x allShapes)::occurences xs
