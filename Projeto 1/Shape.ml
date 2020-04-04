@@ -70,7 +70,8 @@ let belongsRect (px, py) t b =
 (* Checks if a point (px, py) belongs to the Circle(c, f) *)
 let belongsCircle (px, py) c f =
   match c with
-    (cx, cy) -> Pervasives.sqrt(((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
+    (cx, cy) -> Pervasives.sqrt(
+      ((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
 ;;
 
 
@@ -267,7 +268,8 @@ let rectApart ((tx1,ty1),(bx1,by1)) ((tx2,ty2),(bx2,by2)) =
 
 (*Checks if two circles are separated *)
 let circleApart ((cx1,cy1),f1) ((cx2,cy2),f2) =
-  Pervasives.sqrt(((cx1-.cx2)*.(cx1-.cx2)) +. ((cy1-.cy2)*.(cy2-.cy2)))>(f1+.f2)
+  Pervasives.sqrt(
+    ((cx1-.cx2)*.(cx1-.cx2)) +. ((cy1-.cy2)*.(cy2-.cy2)))>(f1+.f2)
 ;;
 
 (*Checks if a circle touches a line *)
@@ -277,10 +279,14 @@ let circleTouchLine ((cx,cy),f) xy =
 
 (*Checks if a circle intersects a line between points a and b*)
 let circleTouchLineBetweenAB  ((cx,cy),f) xy a b =
-  ((a>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
-   || (b<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.)) 
-  && ((a>(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
-      || (b<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.))
+  ((a>(cx+.Pervasives.sqrt(
+       cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
+   || (b<(cx+.Pervasives.sqrt(
+       cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.)) 
+  && ((a>(cx-.Pervasives.sqrt(
+      cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
+      || (b<(cx-.Pervasives.sqrt(
+          cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.))
 ;;
 
 (*Checks if a circle does not intersect a rectangle*)
@@ -346,20 +352,22 @@ let rec touch s1 s2=
 
 
 (*This function has limitations, does not work for all cases:
-    If the construction of the shape s is based on first defining seperate shapes 
-  and then use union to unite them, it works.
-    However, if at the time of the union(l,r), there are parts from the left that 
-  touch somewhere r, it will count only as one partition list element.  
+    If the construction of the shape s is based on first defining seperate 
+    shapes and then use union to unite them, it works.
+    However, if at the time of the union(l,r), there are parts from the left 
+    that touch somewhere r, it will count only as one partition list element.  
     We thought ways of avoyding this, like the use of matrixes,
   however it can be imprecise and lose some relationships inside shape s.
-    Another idea we had is decomposing all the shape s in basic shapes and then joining 
-  "island by island" everything together. 
-    Once again, relationships would NOT be conserved. So thinking about pros, and cons,
-  this seemed to be the more correct way.
-    The user may want to preserved the relationships he established so, this does that,
-  it parts the shape anytime it is possible having this relationships as a first priority.
-    One last error of this implementation is that the subtraction have some issues, 
-  however we would be pleased to explain them personaly, or in some other time, email, zoom, etc. 
+    Another idea we had is decomposing all the shape s in basic shapes and then
+  joining "island by island" everything together. 
+    Once again, relationships would NOT be conserved. So thinking about pros,
+    and cons,this seemed to be the more correct way.
+    The user may want to preserved the relationships he established so, this 
+    does that,it parts the shape anytime it is possible having this 
+    relationships as a first priority.
+    One last error of this implementation is that the subtraction have some 
+    issues, however we would be pleased to explain them personaly, or in some 
+    other time, email, zoom, etc. 
   Without a visual help it is just impossible to explain.
 *)
 let rec partition s =
