@@ -61,11 +61,13 @@ let rec countBasic s = (*e os failwith??*)
 
 (* FUNCTION belongs *)
 
+(* Checks if a point (px, py) belongs in the Rect(t,b) *)
 let belongsRect (px, py) t b =
   match t, b with
     (tx, ty), (bx, by) -> px>=tx && py>=ty && px<=bx && py<=by
 ;;
 
+(* Checks if a point (px, py) belongs in the Circle(c, f) *)
 let belongsCircle (px, py) c f =
   match c with
     (cx, cy) -> Pervasives.sqrt(((px-.cx)*.(px-.cx)) +. ((py-.cy)*.(py-.cy)))<=f
@@ -111,10 +113,12 @@ let  rec which p s =
 
 (* FUNCTION minBound *)
 
+(*Computes the minimum rectangle that includes all points given*)
 let rec maxDimUnion  ((x1, y1) , (x2, y2)) ((x3, y3), (x4, y4)) = 
   ((min x1 x3 , min y1 y3), (max x2 x4, max y2 y4 ))
 ;;
 
+(*Detects the minimum bounding rectangle that involves the shape s*)
 let rec sizeRect s = 
   match s with 
     Rect (t,b) -> (t,b)
@@ -134,6 +138,8 @@ let rec minBound s = match sizeRect s with
 
 (* FUNCTION grid *)
 
+(*Creates a line of union of n rectangles with dimensions axb. 
+  c identifies the column to start creating the rectangle *)
 let rec createLine m n a b c =  let mf = float_of_int m in 
   let cf = float_of_int c in 
   if (m mod 2)=0
@@ -162,11 +168,13 @@ let rec grid m n a b = if m = 1
 
 (* FUNCTION countBasicRepetitions *)
 
+(*Count the number os repetitions of the element a in the list l*)
 let rec count a l = match l with
     [] -> 0
   | x::xs -> (if x=a then 1 else 0) + count a xs
 ;;
 
+(*List all the basic shapes in a shape*)
 let rec listShapes s=
   match s with
     Rect (t,b) -> [Rect (t, b)]
@@ -176,6 +184,8 @@ let rec listShapes s=
   | Subtraction (l,r) -> (listShapes l)@(listShapes r)
 ;;
 
+(* Checks the number of repetitions by cheching a n value of a list os tuples
+   The n value indicates the number os repetitions of that element*)
 let rec elementsRepeated l = match l with
     [] -> 0
   |(x,n)::xs -> (if n>1 then 1 else 0) + elementsRepeated xs
@@ -183,7 +193,8 @@ let rec elementsRepeated l = match l with
 
 
 let countBasicRepetitions s = let allShapes = listShapes s in 
-  let rec occurences l =
+  let rec occurences l = (*Computes a list of tuples (x, n) where x is the element and
+                           n the number os times that the elemnent x occurs in the list l*)
     match l with
       [] -> []
     |x::xs -> (x, count x allShapes)::occurences xs
@@ -195,6 +206,7 @@ let countBasicRepetitions s = let allShapes = listShapes s in
 
 (* FUNCTION svg *)
 
+(*Generates a unique id -function given by the professor Artur Dias*)
 let  genID = 
   let idBase = ref 0 in
   fun () ->
@@ -202,6 +214,8 @@ let  genID =
     "id" ^ (Printf.sprintf "%04d" !idBase)
 ;;
 
+(*Computes the box size of a shape, using the minBound function. 
+  That size is built-in HTML code *)
 let boxSize s = match minBound s with
     Rect ((x1, y1),(x2,y2)) ->" width='"^ string_of_float (x2)^
                               "' height='"^string_of_float(y2)^
@@ -212,6 +226,7 @@ let boxSize s = match minBound s with
   | Subtraction (l,r) -> failwith "boundingBox"
 ;;
 
+(*Computes the HTML code to represent the shape s*)
 let  rec shapehtml s sub inter id=
   match s with
     Rect ((x1, y1),(x2,y2)) -> 
@@ -244,18 +259,21 @@ let svg s =
 
 (* FUNCTION partition *)
 
+(*Checks if two rectangles are separated *)
 let rectApart ((tx1,ty1),(bx1,by1)) ((tx2,ty2),(bx2,by2)) =
   tx1>=bx2 || bx1<=tx2 || ty1>=by2 || by1<=ty2
 ;;
 
+(*Checks if two circles are separated *)
 let circleApart ((cx1,cy1),f1) ((cx2,cy2),f2) =
   Pervasives.sqrt(((cx1-.cx2)*.(cx1-.cx2)) +. ((cy1-.cy2)*.(cy2-.cy2)))>(f1+.f2)
 ;;
 
+(*Checks if a circle touches a line *)
 let circleTouchLine ((cx,cy),f) xy =
   0.<(3.*.(cx*.cx)+.4.*.((xy*.xy)+.(xy*.cy)+.(cy*.cy)-.(f*.f)))
 ;;
-
+(*Checks if a circle intersects a line between points a and b*)
 let circleTouchLineBetweenAB  ((cx,cy),f) xy a b =
   ((a>(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.) 
    || (b<(cx+.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.)) 
@@ -263,6 +281,7 @@ let circleTouchLineBetweenAB  ((cx,cy),f) xy a b =
       || (b<(cx-.Pervasives.sqrt(cx*.cx-.4.*.((cx*.cx)+.(xy-.cy)*.(xy-.cy)-.(f*.f))))/.2.))
 ;;
 
+(*Checks if a circle does not intersect a rectangle*)
 let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
   not(belongsRect (cx,cy) (tx,ty) (bx,by)) &&
   (if (circleTouchLine ((cx,cy),f) ty) 
@@ -284,6 +303,7 @@ let cApartR ((cx,cy),f) ((tx,ty),(bx,by))=
 
 ;;
 
+(*Checks if two shapes intersect*)
 let rec touch s1 s2=
   match (s1, s2) with
     (Rect (t1,b1), Rect(t2,b2)) -> not (rectApart (t1,b1) (t2,b2))
@@ -322,7 +342,11 @@ let rec touch s1 s2=
     touch l1 l2 && not(touch l1 r2) && not(touch r1 l2) 
 ;;
 
+(*This function has limitations, does not work for all cases:
 
+
+
+*)
 let rec partition s =
   match s with
     Rect (t,b) -> [Rect (t, b)]
