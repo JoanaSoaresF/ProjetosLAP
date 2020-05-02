@@ -1,0 +1,13 @@
+{
+    "cSpell.words": [
+        "Retangulo"
+    ],
+
+    "code-runner.executorMap": {
+
+        "c": "cd $dir && gcc -std=c11 *.c -o $fileNameWithoutExt -lm && $dir$fileNameWithoutExt"
+        //"c": "cd $dir && gcc *.c -o $fileNameWithoutExt && $dir$fileNameWithoutExt"
+        // "c": "cd $dir && gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt"
+      }
+
+}
