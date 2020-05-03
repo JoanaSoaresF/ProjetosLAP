@@ -18,8 +18,8 @@ COMPILAÇÃO
 
 IDENTIFICAÇÃO DOS AUTORES
 
-  Aluno 1: número1 nome1
-  Aluno 2: número2 nome2
+  Aluno 1: 55780 Goncalo Lourenco
+  Aluno 2: 55754 Joana Faria
 
 COMENTÁRIO
 
@@ -27,14 +27,16 @@ COMENTÁRIO
  se pede no enunciado.
 
 */
-
+#define USE_PTS true;
 #include "Cartography.h"
 
 /* STRING -------------------------------------- */
 
-static void showStringVector(StringVector sv, int n) {
+static void showStringVector(StringVector sv, int n)
+{
 	int i;
-	for( i = 0 ; i < n ; i++ ) {
+	for (i = 0; i < n; i++)
+	{
 		printf("%s\n", sv[i]);
 	}
 }
@@ -44,14 +46,14 @@ static void showStringVector(StringVector sv, int n) {
 static void error(String message)
 {
 	fprintf(stderr, "%s.\n", message);
-	exit(1);	// Termina imediatamente a execução do programa
+	exit(1); // Termina imediatamente a execução do programa
 }
 
-static void readLine(String line, FILE *f)	// lê uma linha que existe obrigatoriamente
+static void readLine(String line, FILE *f) // lê uma linha que existe obrigatoriamente
 {
-	if( fgets(line, MAX_STRING, f) == NULL )
+	if (fgets(line, MAX_STRING, f) == NULL)
 		error("Ficheiro invalido");
-	line[strlen(line) - 1] = '\0';	// elimina o '\n'
+	line[strlen(line) - 1] = '\0'; // elimina o '\n'
 }
 
 static int readInt(FILE *f)
@@ -62,7 +64,6 @@ static int readInt(FILE *f)
 	sscanf(line, "%d", &i);
 	return i;
 }
-
 
 /* IDENTIFICATION -------------------------------------- */
 
@@ -77,13 +78,13 @@ static Identification readIdentification(FILE *f)
 
 static void showIdentification(int pos, Identification id, int z)
 {
-	if( pos >= 0 ) // pas zero interpretado como não mostrar
+	if (pos >= 0) // pas zero interpretado como nao mostrar
 		printf("%4d ", pos);
 	else
 		printf("%4s ", "");
-	if( z == 3 )
+	if (z == 3)
 		printf("%-25s %-13s %-22s", id.freguesia, id.concelho, id.distrito);
-	else if( z == 2 )
+	else if (z == 2)
 		printf("%-25s %-13s %-22s", "", id.concelho, id.distrito);
 	else
 		printf("%-25s %-13s %-22s", "", "", id.distrito);
@@ -91,7 +92,7 @@ static void showIdentification(int pos, Identification id, int z)
 
 static void showValue(int value)
 {
-	if( value < 0 ) // value negativo interpretado como char
+	if (value < 0) // value negativo interpretado como char
 		printf(" [%c]\n", -value);
 	else
 		printf(" [%3d]\n", value);
@@ -99,17 +100,13 @@ static void showValue(int value)
 
 static bool sameIdentification(Identification id1, Identification id2, int z)
 {
-	if( z == 3 )
-		return strcmp(id1.freguesia, id2.freguesia) == 0
-			&& strcmp(id1.concelho, id2.concelho) == 0
-			&& strcmp(id1.distrito, id2.distrito) == 0;
-	else if( z == 2 )
-		return strcmp(id1.concelho, id2.concelho) == 0
-			&& strcmp(id1.distrito, id2.distrito) == 0;
+	if (z == 3)
+		return strcmp(id1.freguesia, id2.freguesia) == 0 && strcmp(id1.concelho, id2.concelho) == 0 && strcmp(id1.distrito, id2.distrito) == 0;
+	else if (z == 2)
+		return strcmp(id1.concelho, id2.concelho) == 0 && strcmp(id1.distrito, id2.distrito) == 0;
 	else
 		return strcmp(id1.distrito, id2.distrito) == 0;
 }
-
 
 /* COORDINATES -------------------------------------- */
 
@@ -151,7 +148,6 @@ double haversine(Coordinates c1, Coordinates c2)
 	return EARTH_RADIUS * (2 * asin(sqrt(a)));
 }
 
-
 /* RECTANGLE -------------------------------------- */
 
 Rectangle rect(Coordinates tl, Coordinates br)
@@ -163,22 +159,45 @@ Rectangle rect(Coordinates tl, Coordinates br)
 static void showRectangle(Rectangle r)
 {
 	printf("{%lf, %lf, %lf, %lf}",
-			r.topLeft.lat, r.topLeft.lon,
-			r.bottomRight.lat, r.bottomRight.lon);
+		   r.topLeft.lat, r.topLeft.lon,
+		   r.bottomRight.lat, r.bottomRight.lon);
 }
 
 static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 {
-////// FAZER
-	return rect(coord(-9999,-9999), coord(9999,9999));
+	// TODO 
+
+	double bottomLat, topLat = vs[0].lat;
+	double bottomLon, topLon = vs[0].lon;
+	for (int i = 1; i < n; i++)
+	{
+		double lat = vs[i].lat;
+		double lon = vs[i].lon;
+
+		if (lat > topLat)
+			topLat = lat;
+
+		if (lat < bottomLat)
+			bottomLat = lat;
+
+		if (lon < topLon)
+			topLon = lon;
+
+		if (lon > bottomLon)
+			bottomLon = lon;
+	}
+
+	return rect(coord(topLat, topLon), coord(bottomLat, bottomLon));
 }
 
 bool insideRectangle(Coordinates c, Rectangle r)
 {
-	////// FAZER
-		return false;
+	// TODO
+	return c.lat>=r.bottomRight.lat 
+			&& c.lat<=r.topLeft.lat 
+			&& c.lon >= r.topLeft.lon
+			&& c.lon <= r.bottomRight.lon;;
 }
-
 
 /* RING -------------------------------------- */
 
@@ -186,10 +205,11 @@ static Ring readRing(FILE *f)
 {
 	Ring r;
 	int i, n = readInt(f);
-	if( n > MAX_VERTEXES )
-		error("Anel demasiado extenso");
+	//if( n > MAX_VERTEXES )
+	//	error("Anel demasiado extenso");
 	r.nVertexes = n;
-	for( i = 0 ; i < n ; i++ ) {
+	for (i = 0; i < n; i++)
+	{
 		r.vertexes[i] = readCoordinates(f);
 	}
 	r.boundingBox =
@@ -197,21 +217,21 @@ static Ring readRing(FILE *f)
 	return r;
 }
 
-
 // http://alienryderflex.com/polygon/
 bool insideRing(Coordinates c, Ring r)
 {
-	if( !insideRectangle(c, r.boundingBox) )	// otimização
+	if (!insideRectangle(c, r.boundingBox)) // otimização
 		return false;
 	double x = c.lon, y = c.lat;
 	int i, j;
 	bool oddNodes = false;
-	for( i = 0, j = r.nVertexes - 1 ; i < r.nVertexes ; j = i++ ) {
+	for (i = 0, j = r.nVertexes - 1; i < r.nVertexes; j = i++)
+	{
 		double xi = r.vertexes[i].lon, yi = r.vertexes[i].lat;
 		double xj = r.vertexes[j].lon, yj = r.vertexes[j].lat;
-		if( ((yi < y && y <= yj) || (yj < y && y <= yi))
-								&& (xi <= x || xj <= x) ) {
-			oddNodes ^= (xi + (y-yi)/(yj-yi) * (xj-xi)) < x;
+		if (((yi < y && y <= yj) || (yj < y && y <= yi)) && (xi <= x || xj <= x))
+		{
+			oddNodes ^= (xi + (y - yi) / (yj - yi) * (xj - xi)) < x;
 		}
 	}
 	return oddNodes;
@@ -219,10 +239,9 @@ bool insideRing(Coordinates c, Ring r)
 
 bool adjacentRings(Ring a, Ring b)
 {
-////// FAZER
+	// TODO
 	return false;
 }
-
 
 /* PARCEL -------------------------------------- */
 
@@ -231,11 +250,12 @@ static Parcel readParcel(FILE *f)
 	Parcel p;
 	p.identification = readIdentification(f);
 	int i, n = readInt(f);
-	if( n > MAX_HOLES )
-		error("Poligono com demasiados buracos");
+	//if( n > MAX_HOLES )
+	//	error("Poligono com demasiados buracos");
 	p.edge = readRing(f);
 	p.nHoles = n;
-	for( i = 0 ; i < n ; i++ ) {
+	for (i = 0; i < n; i++)
+	{
 		p.holes[i] = readRing(f);
 	}
 	return p;
@@ -247,24 +267,23 @@ static void showHeader(Identification id)
 	printf("\n");
 }
 
-static void showParcel(int pos, Parcel p, int lenght)
+static void showParcel(int pos, Parcel p, int length)
 {
 	showIdentification(pos, p.identification, 3);
-	showValue(lenght);
+	showValue(length);
 }
 
 bool insideParcel(Coordinates c, Parcel p)
 {
-////// FAZER
+	// TODO
 	return false;
 }
 
 bool adjacentParcels(Parcel a, Parcel b)
 {
-	////// FAZER
-		return false;
+	// TODO
+	return false;
 }
-
 
 /* CARTOGRAPHY -------------------------------------- */
 
@@ -273,12 +292,13 @@ int loadCartography(String fileName, Cartography *cartography)
 	FILE *f;
 	int i;
 	f = fopen(fileName, "r");
-	if( f == NULL )
+	if (f == NULL)
 		error("Impossivel abrir ficheiro");
 	int n = readInt(f);
-	if( n > MAX_PARCELS )
-		error("Demasiadas parcelas no ficheiro");
-	for( i = 0 ; i < n ; i++ ) {
+	//if( n > MAX_PARCELS )
+	//	error("Demasiadas parcelas no ficheiro");
+	for (i = 0; i < n; i++)
+	{
 		(*cartography)[i] = readParcel(f);
 	}
 	fclose(f);
@@ -287,9 +307,10 @@ int loadCartography(String fileName, Cartography *cartography)
 
 static int findLast(Cartography cartography, int n, int j, Identification id)
 {
-	for(  ; j < n ; j++ ) {
-		if( !sameIdentification(cartography[j].identification, id, 3) )
-			return j-1;
+	for (; j < n; j++)
+	{
+		if (!sameIdentification(cartography[j].identification, id, 3))
+			return j - 1;
 	}
 	return n;
 }
@@ -299,20 +320,21 @@ void showCartography(Cartography cartography, int n)
 	int last;
 	Identification header = {"___FREGUESIA___", "___CONCELHO___", "___DISTRITO___"};
 	showHeader(header);
-	for( int i = 0 ; i < n ; i = last + 1 ) {
+	for (int i = 0; i < n; i = last + 1)
+	{
 		last = findLast(cartography, n, i, cartography[i].identification);
 		showParcel(i, cartography[i], last - i + 1);
 	}
 }
 
-
 /* INTERPRETER -------------------------------------- */
 
 static bool checkArgs(int arg)
 {
-	if( arg != -1 )
+	if (arg != -1)
 		return true;
-	else {
+	else
+	{
 		printf("ERRO: FALTAM ARGUMENTOS!\n");
 		return false;
 	}
@@ -320,9 +342,10 @@ static bool checkArgs(int arg)
 
 static bool checkPos(int pos, int n)
 {
-	if( 0 <= pos && pos < n )
+	if (0 <= pos && pos < n)
 		return true;
-	else {
+	else
+	{
 		printf("ERRO: POSICAO INEXISTENTE!\n");
 		return false;
 	}
@@ -337,36 +360,41 @@ static void commandListCartography(Cartography cartography, int n)
 // M pos
 static void commandMaximum(int pos, Cartography cartography, int n)
 {
-	if( !checkArgs(pos) || !checkPos(pos, n) )
+	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
-	////// FAZER
+	// TODO
 }
 
 void interpreter(Cartography cartography, int n)
 {
 	String commandLine;
-	for(;;) {	// ciclo infinito
+	for (;;)
+	{ // ciclo infinito
 		printf("> ");
 		readLine(commandLine, stdin);
 		char command = ' ';
 		double arg1 = -1.0, arg2 = -1.0, arg3 = -1.0;
 		sscanf(commandLine, "%c %lf %lf %lf", &command, &arg1, &arg2, &arg3);
 		// printf("%c %lf %lf %lf\n", command, arg1, arg2, arg3);
-		switch( commandLine[0] ) {
-			case 'L': case 'l':	// listar
-				commandListCartography(cartography, n);
-				break;
+		switch (commandLine[0])
+		{
+		case 'L':
+		case 'l': // listar
+			commandListCartography(cartography, n);
+			break;
 
-			case 'M': case 'm':	// maximo
-				commandMaximum(arg1, cartography, n);
-				break;
+		case 'M':
+		case 'm': // maximo
+			commandMaximum(arg1, cartography, n);
+			break;
 
-			case 'Z': case 'z':	// terminar
-				printf("Fim de execucao! Volte sempre.\n");
-				return;
+		case 'Z':
+		case 'z': // terminar
+			printf("Fim de execucao! Volte sempre.\n");
+			return;
 
-			default:
-				printf("Comando desconhecido: \"%s\"\n", commandLine);
+		default:
+			printf("Comando desconhecido: \"%s\"\n", commandLine);
 		}
 	}
 }

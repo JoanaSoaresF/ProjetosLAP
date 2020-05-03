@@ -61,14 +61,14 @@ bool insideRectangle(Coordinates c, Rectangle r);
 /* RING -------------------------------------- */
 
 #if USE_PTS
-typedef struct {	// Anel - um caminho linear fechado que não se auto-intersecta
+typedef struct {	// Anel - um caminho linear fechado que nao se auto-intersecta
 	Coordinates *vertexes;
 	int nVertexes;
 	Rectangle boundingBox;
 } Ring;
 #else
 #define MAX_VERTEXES		30000
-typedef struct {	// Anel - um caminho linear fechado que não se auto-intersecta
+typedef struct {	// Anel - um caminho linear fechado que nao se auto-intersecta
 	Coordinates vertexes[MAX_VERTEXES];
 	int nVertexes;
 	Rectangle boundingBox;
@@ -83,7 +83,7 @@ bool adjacentRings(Ring a, Ring b);
 /* PARCEL -------------------------------------- */
 
 #if USE_PTS
-typedef struct {	// Parcela duma freguesia. É um anel com eventuais buracos
+typedef struct {	// Parcela duma freguesia. E um anel com eventuais buracos
 	Identification identification;
 	Ring edge;
 	Ring *holes;
@@ -91,7 +91,7 @@ typedef struct {	// Parcela duma freguesia. É um anel com eventuais buracos
 } Parcel;
 #else
 #define MAX_HOLES			2
-typedef struct {	// Parcela duma freguesia. É um anel com eventuais buracos
+typedef struct {	// Parcela duma freguesia. E um anel com eventuais buracos
 	Identification identification;
 	Ring edge;
 	Ring holes[MAX_HOLES];
