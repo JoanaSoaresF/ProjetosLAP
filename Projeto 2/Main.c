@@ -7,7 +7,7 @@
 #define USE_PTS true;
 #include "Cartography.h"
 
-static Cartography cartography;	// variável gigante
+static Cartography cartography;	// variavel gigante
 static int nCartography = 0;
 
 int main(void)

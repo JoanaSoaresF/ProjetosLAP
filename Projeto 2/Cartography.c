@@ -46,10 +46,10 @@ static void showStringVector(StringVector sv, int n)
 static void error(String message)
 {
 	fprintf(stderr, "%s.\n", message);
-	exit(1); // Termina imediatamente a execução do programa
+	exit(1); // Termina imediatamente a execucao do programa
 }
 
-static void readLine(String line, FILE *f) // lê uma linha que existe obrigatoriamente
+static void readLine(String line, FILE *f) // le uma linha que existe obrigatoriamente
 {
 	if (fgets(line, MAX_STRING, f) == NULL)
 		error("Ficheiro invalido");
@@ -165,7 +165,7 @@ static void showRectangle(Rectangle r)
 
 static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 {
-	// TODO 
+	// TODO
 
 	double bottomLat, topLat = vs[0].lat;
 	double bottomLon, topLon = vs[0].lon;
@@ -193,10 +193,8 @@ static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 bool insideRectangle(Coordinates c, Rectangle r)
 {
 	// TODO
-	return c.lat>=r.bottomRight.lat 
-			&& c.lat<=r.topLeft.lat 
-			&& c.lon >= r.topLeft.lon
-			&& c.lon <= r.bottomRight.lon;;
+	return c.lat >= r.bottomRight.lat && c.lat <= r.topLeft.lat && c.lon >= r.topLeft.lon && c.lon <= r.bottomRight.lon;
+	;
 }
 
 /* RING -------------------------------------- */
@@ -208,9 +206,11 @@ static Ring readRing(FILE *f)
 	//if( n > MAX_VERTEXES )
 	//	error("Anel demasiado extenso");
 	r.nVertexes = n;
+	r.vertexes = malloc(n * sizeof(Coordinates));
+
 	for (i = 0; i < n; i++)
 	{
-		r.vertexes[i] = readCoordinates(f);
+		r.vertexes[i] = readCoordinates(f); // !!malloc
 	}
 	r.boundingBox =
 		calculateBoundingBox(r.vertexes, r.nVertexes);
@@ -220,7 +220,7 @@ static Ring readRing(FILE *f)
 // http://alienryderflex.com/polygon/
 bool insideRing(Coordinates c, Ring r)
 {
-	if (!insideRectangle(c, r.boundingBox)) // otimização
+	if (!insideRectangle(c, r.boundingBox)) // otimizacao
 		return false;
 	double x = c.lon, y = c.lat;
 	int i, j;
@@ -239,8 +239,14 @@ bool insideRing(Coordinates c, Ring r)
 
 bool adjacentRings(Ring a, Ring b)
 {
-	// TODO
-	return false;
+	bool touch = false;
+	for (int i = 0; i < a.nVertexes && !touch; i++)
+	{
+		for (int j = 0; j < b.nVertexes && !touch; j++)
+			if (sameCoordinates(a.vertexes[i], b.vertexes[j]))
+				touch = true;
+	}
+	return touch;
 }
 
 /* PARCEL -------------------------------------- */
@@ -254,9 +260,11 @@ static Parcel readParcel(FILE *f)
 	//	error("Poligono com demasiados buracos");
 	p.edge = readRing(f);
 	p.nHoles = n;
+	p.holes = malloc(n * sizeof(Ring));
+
 	for (i = 0; i < n; i++)
 	{
-		p.holes[i] = readRing(f);
+		p.holes[i] = readRing(f); //!! malloc
 	}
 	return p;
 }
@@ -275,14 +283,36 @@ static void showParcel(int pos, Parcel p, int length)
 
 bool insideParcel(Coordinates c, Parcel p)
 {
-	// TODO
-	return false;
+	bool inside = insideRectangle(c, p.edge.boundingBox);
+
+	if (inside)
+	{
+		inside = insideRing(c, p.edge);
+		for (int i = 0; i < p.nHoles && inside; i++)
+		{
+			inside = !insideRing(c, p.holes[i]);
+		}
+	}
+
+	return inside;
 }
 
 bool adjacentParcels(Parcel a, Parcel b)
 {
-	// TODO
-	return false;
+	bool touch = false;
+	if (!sameIdentification(a.identification, b.identification,3))
+	{
+		touch = adjacentRings(a.edge, b.edge);
+		for(int i = 0; i<a.nHoles && !touch; i++) {
+			touch = adjacentRings(b.edge, a.holes[i]);
+		}
+		for(int j = 0; j<b.nHoles && !touch; j++) {
+			touch = adjacentRings(a.edge, b.holes[j]);
+		}
+		
+	}
+
+	return touch;
 }
 
 /* CARTOGRAPHY -------------------------------------- */
@@ -297,9 +327,10 @@ int loadCartography(String fileName, Cartography *cartography)
 	int n = readInt(f);
 	//if( n > MAX_PARCELS )
 	//	error("Demasiadas parcelas no ficheiro");
+	cartography = malloc(n * sizeof(Parcel));
 	for (i = 0; i < n; i++)
 	{
-		(*cartography)[i] = readParcel(f);
+		(*cartography)[i] = readParcel(f); //TODO malloc
 	}
 	fclose(f);
 	return n;
@@ -362,7 +393,48 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
-	// TODO
+
+	String freguesia = cartography[pos].identification.freguesia;
+
+	int i = pos; 
+	Parcel p = cartography[pos];
+	int maxVertexes = 0;
+	int maxPos = pos;
+	Parcel maxParcel;
+	while(i<n && strcmp(p.identification.freguesia, freguesia)==0) {
+		int m = p.edge.nVertexes;
+		for(int j = 0; j<p.nHoles;j++) {
+			m += p.holes[j].nVertexes;
+		}
+		if(m>maxVertexes) {
+			maxVertexes = m;
+			maxParcel = p;
+			maxPos = i;
+		}
+		i++;
+		p=cartography[i];
+
+	}
+
+	i = pos-1;
+	p = cartography[pos];
+	while(i>=0 && strcmp(p.identification.freguesia, freguesia)==0) {
+		int m = p.edge.nVertexes;
+		for(int j = 0; j<p.nHoles;j++) {
+			m += p.holes[j].nVertexes;
+		}
+		if(m>maxVertexes) {
+			maxVertexes = m;
+			maxParcel = p;
+			maxPos = i;
+		}
+		i--;
+		p=cartography[i];
+
+	}
+	showParcel(maxPos, maxParcel, maxVertexes);
+
+	
 }
 
 void interpreter(Cartography cartography, int n)

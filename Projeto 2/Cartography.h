@@ -74,7 +74,6 @@ typedef struct {	// Anel - um caminho linear fechado que nao se auto-intersecta
 	Rectangle boundingBox;
 } Ring;
 #endif
-
 bool insideRing(Coordinates c, Ring r);
 bool adjacentRings(Ring a, Ring b);
 
@@ -98,6 +97,7 @@ typedef struct {	// Parcela duma freguesia. E um anel com eventuais buracos
 	int nHoles;
 } Parcel;
 #endif
+
 
 bool insideParcel(Coordinates c, Parcel p);
 bool adjacentParcels(Parcel a, Parcel b);
