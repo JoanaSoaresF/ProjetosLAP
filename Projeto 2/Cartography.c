@@ -268,7 +268,7 @@ bool adjacentParcels(Parcel a, Parcel b)
 
 /* CARTOGRAPHY -------------------------------------- */
 
-int loadCartography(String fileName, Cartography cartography)
+int loadCartography(String fileName, Cartography *cartography)
 {
 	FILE *f;
 	int i;
@@ -279,7 +279,7 @@ int loadCartography(String fileName, Cartography cartography)
 	if( n > MAX_PARCELS )
 		error("Demasiadas parcelas no ficheiro");
 	for( i = 0 ; i < n ; i++ ) {
-		cartography[i] = readParcel(f);
+		(*cartography)[i] = readParcel(f);
 	}
 	fclose(f);
 	return n;
