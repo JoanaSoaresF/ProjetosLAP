@@ -682,7 +682,7 @@ static void commandAdjacencies(int pos, Cartography cartography, int n)
 		return;
 
 	bool m = false;
-	
+
 	for (int i = 0; i < n; i++)
 	{
 		if (adjacentParcels(cartography[pos], cartography[i]))
@@ -700,10 +700,74 @@ static void commandAdjacencies(int pos, Cartography cartography, int n)
 }
 
 //F
+static bool belongs(int x, int *v, int n)
+{
+	bool belongs = false;
+	int i = 0;
+	while (!belongs && i < n)
+	{
+		if (x == v[i])
+			belongs = true;
+		i++;
+	}
+	return belongs;
+}
+
+static int adjacencies(int *parcels, int m, Cartography cartography, int n)
+{
+
+	int a = 0;
+	for (int j = 0; j < m; j++)
+	{
+		int p = parcels[j];
+		for (int i = 0; i < n; i++)
+		{
+			if (adjacentParcels(cartography[p], cartography[i]) && !belongs(i, parcels, m + a))
+			{
+				parcels[m + a] = j;
+				a++;
+			}
+		}
+	}
+	return m + a;
+}
+
 static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 {
 	if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
 		return;
+
+	int min = -1;
+
+	if (pos1 != pos2)
+	{
+		Parcel p1 = cartography[pos1];
+		Parcel p2 = cartography[pos2];
+		int /*lastAuxP[n],*/ auxP[n];
+		auxP[0] /*= lastAuxP[0]*/ = pos1;
+		int m = 1, auxI = 0;
+		int i = 0;
+		while (!belongs(pos2, auxP, m) )
+		{
+			m = adjacencies(auxP, m, cartography, n);
+			if (m == auxI) {
+				i = -1;
+				break;
+			}
+			else
+			{
+				/*memcpy(lastAuxP, auxP, m * sizeof(int));*/
+				auxI = m;
+				i++;
+			}
+		}
+		min = i-1;
+	}
+
+	if (min <= 0)
+		printf("NAO HA CAMINHO\n");
+	else
+		printf("%d\n", min);
 }
 
 //T
