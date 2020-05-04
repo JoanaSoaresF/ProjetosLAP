@@ -739,7 +739,7 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 
 	int min = 0;
 
-	if (pos1 != pos2)
+	if (pos1 != pos2) 
 	{
 		Parcel p1 = cartography[pos1];
 		Parcel p2 = cartography[pos2];
