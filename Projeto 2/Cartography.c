@@ -165,8 +165,6 @@ static void showRectangle(Rectangle r)
 
 static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 {
-	// TODO
-
 	double bottomLat = vs[0].lat, topLat = vs[0].lat;
 	double bottomLon = vs[0].lon, topLon = vs[0].lon;
 	for (int i = 1; i < n; i++)
@@ -551,17 +549,16 @@ static int numberFreguesia(int pos, Identification id, Cartography cartography, 
 	return m;
 }
 
-static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int l)
+static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int z)
 {
 	int i = 0;
 	int m = 0;
 
 	for (int i = 0; i < n; i++)
 	{
-		if (sameIdentification(id, cartography[i].identification, l))
-		{
+		if (sameIdentification(id, cartography[i].identification, z))
 			m++;
-		}
+	
 	}
 	return m;
 }
@@ -615,7 +612,6 @@ static void commandConcelhos(Cartography cartography, int n)
 	String c;
 	for (int i = 0; i < n; i++)
 	{
-
 		strcpy(c, cartography[i].identification.concelho);
 		if (!inVector(c, concelhos, m))
 		{
@@ -700,6 +696,9 @@ static void commandAdjacencies(int pos, Cartography cartography, int n)
 }
 
 //F
+/**
+ * Checks if the value x is in the vector v with n elements
+ */
 static bool belongs(int x, int *v, int n)
 {
 	bool belongs = false;
@@ -712,7 +711,11 @@ static bool belongs(int x, int *v, int n)
 	}
 	return belongs;
 }
-
+/**
+ * Computes all tha adjacent parcers of the parcels in int *parcels. 
+ * Adds the new adjacencies to the parcels vetor.
+ * The resul vetor has all the initial parcels and the all the parcels that are adjacent to those
+ */
 static int adjacencies(int *parcels, int m, Cartography cartography, int n)
 {
 
@@ -724,7 +727,7 @@ static int adjacencies(int *parcels, int m, Cartography cartography, int n)
 		{
 			if (adjacentParcels(cartography[p], cartography[i]) && !belongs(i, parcels, m + a))
 			{
-				parcels[m + a] = j;
+				parcels[m + a] = i;
 				a++;
 			}
 		}
@@ -741,27 +744,23 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 
 	if (pos1 != pos2) 
 	{
-		Parcel p1 = cartography[pos1];
-		Parcel p2 = cartography[pos2];
-		int /*lastAuxP[n],*/ auxP[n];
-		auxP[0] /*= lastAuxP[0]*/ = pos1;
-		int m = 1, auxI = 0;
-		int i = 0;
-		while (!belongs(pos2, auxP, m))
+		int adjsParcels[n];
+		adjsParcels[0] = pos1;
+		int sizeAux = 1, sizePrev = 0, i = 0;
+		while (!belongs(pos2, adjsParcels, sizeAux))
 		{
-			m = adjacencies(auxP, m, cartography, n);
-			if (m == auxI) {
+			sizeAux = adjacencies(adjsParcels, sizeAux, cartography, n);
+			if (sizeAux == sizePrev) { //no changes in the adjacencies vector, therefor no path
 				i = -1;
 				break;
 			}
 			else
 			{
-				/*memcpy(lastAuxP, auxP, m * sizeof(int));*/
-				auxI = m;
+				sizePrev = sizeAux;
 				i++;
 			}
 		}
-		min = i-1;
+		min = i;
 	}
 
 	if (min <= 0)
