@@ -737,7 +737,7 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 	if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
 		return;
 
-	int min = -1;
+	int min = 0;
 
 	if (pos1 != pos2)
 	{
@@ -747,7 +747,7 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 		auxP[0] /*= lastAuxP[0]*/ = pos1;
 		int m = 1, auxI = 0;
 		int i = 0;
-		while (!belongs(pos2, auxP, m) )
+		while (!belongs(pos2, auxP, m))
 		{
 			m = adjacencies(auxP, m, cartography, n);
 			if (m == auxI) {
