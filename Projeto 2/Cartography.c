@@ -27,7 +27,7 @@ COMENTÁRIO
  se pede no enunciado.
 
 */
-#define USE_PTS true;
+#define USE_PTS true
 #include "Cartography.h"
 
 /* STRING -------------------------------------- */
@@ -330,7 +330,7 @@ int loadCartography(String fileName, Cartography *cartography)
 	int n = readInt(f);
 	//if( n > MAX_PARCELS )
 	//	error("Demasiadas parcelas no ficheiro");
-	cartography = malloc(n * sizeof(Parcel));
+	*cartography = malloc(n * sizeof(Parcel));
 	for (i = 0; i < n; i++)
 	{
 		(*cartography)[i] = readParcel(f); //TODO malloc
@@ -397,14 +397,14 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
 
-	String freguesia = cartography[pos].identification.freguesia;
+	Identification id = cartography[pos].identification;
 
 	int i = pos;
 	Parcel p = cartography[pos];
 	int maxVertexes = 0;
 	int maxPos = pos;
 	Parcel maxParcel;
-	while (i < n && strcmp(p.identification.freguesia, freguesia) == 0)
+	while (i < n && sameIdentification(id, cartography[i].identification, 3))
 	{
 		int m = p.edge.nVertexes;
 		for (int j = 0; j < p.nHoles; j++)
@@ -423,7 +423,7 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 
 	i = pos - 1;
 	p = cartography[pos];
-	while (i >= 0 && strcmp(p.identification.freguesia, freguesia) == 0)
+	while (i >= 0 && sameIdentification(id, cartography[i].identification, 3))
 	{
 		int m = p.edge.nVertexes;
 		for (int j = 0; j < p.nHoles; j++)
@@ -492,16 +492,7 @@ static void commandParcelInformation(int pos, Cartography cartography, int n)
 		return;
 
 	Parcel parcel = cartography[pos];
-	int i = 0;
-	while (i < parcel.nHoles)
-	{
-		printf("%-13d ", parcel.holes[i].nVertexes);
-		i++;
-	}
 
-	//comprimento do anel exterior
-	//comprimento dos varios buracos
-	//bounding box do anel exterior {}
 	showIdentification(pos, parcel.identification, 3);
 	printf("%-25d ", parcel.edge.nVertexes);
 	int i = 0;
@@ -511,8 +502,7 @@ static void commandParcelInformation(int pos, Cartography cartography, int n)
 		i++;
 	}
 	Rectangle r = parcel.edge.boundingBox;
-	printf("{%f, %f, %f, %f}", r.topLeft.lat, r.topLeft.lon,
-		   r.bottomRight.lat, r.bottomRight.lon);
+	showRectangle(r);
 }
 
 static void commandTrip(double lat, double lon, int pos, Cartography cartography, int n)
@@ -535,14 +525,63 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
 
 	printf("%4f", distance);
 }
+static int numberFreguesia(int pos, Identification id, Cartography cartography, int n) {
+	int i = pos;
+	int m = 0;
 
+	while(i<n && sameIdentification(id, cartography[i].identification, 3)) { 
+		m++;
+		i++;
+	}
+	i= pos-1;
+	while(i>0 && sameIdentification(id, cartography[i].identification, 3)) {
+		m++;
+		i++;
+	}
+
+
+	return m;
+
+}
+
+static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int l) {
+	int i = 0;
+	int m = 0;
+
+	while(i<n && sameIdentification(id, cartography[i].identification, l)) { 
+		m++;
+		i++;
+	}
+	return m;
+
+}
 static void commandParcelHowMany(int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
+	
+	Parcel p = cartography[pos];
+	Identification id = p.identification;
+	int nFreguesias = numberFreguesia(pos, id, cartography, n);
+	int nConselhos = numberConselhosDistritos(id, cartography, n, 2);
+	int nDistritos = numberConselhosDistritos(id, cartography, n, 1);
+
+	showParcel(pos, p, nFreguesias);
+
+	showIdentification(pos, id, 2);
+	showValue(nConselhos);
+
+	showIdentification(pos, id, 1);
+	showValue(nDistritos);
+
+
+
 }
 static void commandConselhos(Cartography cartography, int n)
+	
 {
+	StringVector conselhos;
+
 }
 
 static void commandDistritos(Cartography cartography, int n)
@@ -553,12 +592,31 @@ static void commandParcel(double lat, double lon, Cartography cartography, int n
 {
 	if (!checkArgs(lat) || !checkArgs(lon))
 		return;
+
+	Coordinates c = coord(lat, lon);
+	int found = -1;
+	int i = 0;
+
+	while(found<0 && i<n) {
+		if(insideParcel(c, cartography[i]))
+			found = i;
+	}
+	if(found<0) {
+		printf("FORA DO MAPA");
+	} else {
+		showIdentification(found, cartography[found].identification, 3);
+	}
+
 }
 
 static void commandAdjacencies(int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
+
+	
+
+	
 }
 
 static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
@@ -638,7 +696,7 @@ void interpreter(Cartography cartography, int n)
 
 		case 'F':
 		case 'f': // fronteiras
-			commandBorders(arg1, cartography, n);
+			commandBorders(arg1, arg2, cartography, n);
 			break;
 
 		case 'T':
