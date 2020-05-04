@@ -239,6 +239,7 @@ bool insideRing(Coordinates c, Ring r)
 
 bool adjacentRings(Ring a, Ring b)
 {
+	//TODO otimizar: ver se está fora do boundingbox?
 	bool touch = false;
 	for (int i = 0; i < a.nVertexes && !touch; i++)
 	{
@@ -299,6 +300,7 @@ bool insideParcel(Coordinates c, Parcel p)
 
 bool adjacentParcels(Parcel a, Parcel b)
 {
+	//TODO otimizar: ver se está fora do boundingbox?
 	bool touch = false;
 	if (!sameIdentification(a.identification, b.identification, 3))
 	{
@@ -344,7 +346,7 @@ static int findLast(Cartography cartography, int n, int j, Identification id)
 		if (!sameIdentification(cartography[j].identification, id, 3))
 			return j - 1;
 	}
-	return n;
+	return n - 1;
 }
 
 void showCartography(Cartography cartography, int n)
@@ -440,65 +442,135 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 	showParcel(maxPos, maxParcel, maxVertexes);
 }
 
-static void commandBounders(Cartography cartography, int n){
+static void commandBoundaries(Cartography cartography, int m)
+{
 
-	Parcel North, East, South, Oeast = cartography[0];
-	int nPos, ePos, sPos, oPos = 0;
-	int n=North.edge.boundingBox.topLeft.lat,
-		e=East.edge.boundingBox.bottomRight.lon,
-		s=South.edge.boundingBox.bottomRight.lat,
-		o=Oeast.edge.boundingBox.topLeft.lon;
-	for(int i=1;i<n;i++){
+	Parcel north, east, south, west = cartography[0];
+	int nPos, ePos, sPos, wPos = 0;
+	int n = north.edge.boundingBox.topLeft.lat,
+		e = east.edge.boundingBox.bottomRight.lon,
+		s = south.edge.boundingBox.bottomRight.lat,
+		w = west.edge.boundingBox.topLeft.lon;
+	for (int i = 1; i < m; i++)
+	{
 		Rectangle auxR = cartography[i].edge.boundingBox;
-		if(n<auxR.topLeft.lat){
-			North = cartography[i];
+		if (n < auxR.topLeft.lat)
+		{
+			north = cartography[i];
 			nPos = i;
 			n = auxR.topLeft.lat;
 		}
-		if(e<auxR.bottomRight.lon){
-			East = cartography[i];
+		if (e < auxR.bottomRight.lon)
+		{
+			east = cartography[i];
 			ePos = i;
 			e = auxR.bottomRight.lon;
 		}
-		if(s>auxR.bottomRight.lat){
-			South = cartography[i];
+		if (s > auxR.bottomRight.lat)
+		{
+			south = cartography[i];
 			sPos = i;
 			s = auxR.bottomRight.lat;
 		}
-		if(o>auxR.topLeft.lon){
-			Oeast = cartography[i];
-			oPos = i;
-			o = auxR.topLeft.lon;
+		if (w > auxR.topLeft.lon)
+		{
+			west = cartography[i];
+			wPos = i;
+			w = auxR.topLeft.lon;
 		}
 	}
-	
-	showParcel(nPos, North, 'N');
-	showParcel(ePos, East, 'E');
-	showParcel(sPos, South, 'S');
-	showParcel(oPos, Oeast, 'O');
 
+	showParcel(nPos, north, 'N');
+	showParcel(ePos, east, 'E');
+	showParcel(sPos, south, 'S');
+	showParcel(wPos, west, 'O');
 }
 
-static void commandShortVersion(arg1, cartography, n){
-
-}
-
-static void commandTrip(double lat, double lon, int pos, Cartography cartography, int n){
+static void commandParcelInformation(int pos, Cartography cartography, int n)
+{
 	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
-	
+
+	Parcel parcel = cartography[pos];
+	int i = 0;
+	while (i < parcel.nHoles)
+	{
+		printf("%-13d ", parcel.holes[i].nVertexes);
+		i++;
+	}
+
+	//comprimento do anel exterior
+	//comprimento dos varios buracos
+	//bounding box do anel exterior {}
+	showIdentification(pos, parcel.identification, 3);
+	printf("%-25d ", parcel.edge.nVertexes);
+	int i = 0;
+	while (i < parcel.nHoles)
+	{
+		printf("%-13d ", parcel.holes[i].nVertexes);
+		i++;
+	}
+	Rectangle r = parcel.edge.boundingBox;
+	printf("{%f, %f, %f, %f}", r.topLeft.lat, r.topLeft.lon,
+		   r.bottomRight.lat, r.bottomRight.lon);
+}
+
+static void commandTrip(double lat, double lon, int pos, Cartography cartography, int n)
+{
+	if (!checkArgs(lat) || !checkArgs(lon) || !checkArgs(pos) || !checkPos(pos, n))
+		return;
+
 	double distance;
-	Coordinates auxC = coord(lat,lon);
-	if(insideParcel(auxC, cartography[pos]))
+	Coordinates auxC = coord(lat, lon);
+	if (insideParcel(auxC, cartography[pos]))
 		distance = 0;
-	else{
-		for(int i = cartography[pos].edge.nVertexes;i>0;i--){
-			if(haversine(cartography[pos].edge.vertexes[i-1], auxC) < distance)
-				distance = haversine(cartography[pos].edge.vertexes[i-1], auxC);
+	else
+	{
+		for (int i = cartography[pos].edge.nVertexes; i > 0; i--)
+		{
+			if (haversine(cartography[pos].edge.vertexes[i - 1], auxC) < distance)
+				distance = haversine(cartography[pos].edge.vertexes[i - 1], auxC);
 		}
 	}
 
-	printf("%f", distance);
+	printf("%4f", distance);
+}
+
+static void commandParcelHowMany(int pos, Cartography cartography, int n)
+{
+	if (!checkArgs(pos) || !checkPos(pos, n))
+		return;
+}
+static void commandConselhos(Cartography cartography, int n)
+{
+}
+
+static void commandDistritos(Cartography cartography, int n)
+{
+}
+
+static void commandParcel(double lat, double lon, Cartography cartography, int n)
+{
+	if (!checkArgs(lat) || !checkArgs(lon))
+		return;
+}
+
+static void commandAdjacencies(int pos, Cartography cartography, int n)
+{
+	if (!checkArgs(pos) || !checkPos(pos, n))
+		return;
+}
+
+static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
+{
+	if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
+		return;
+}
+
+static void commandPartition(int dist, Cartography cartography, int n)
+{
+	if (!checkArgs(dist))
+		return;
 }
 
 void interpreter(Cartography cartography, int n)
@@ -525,53 +597,53 @@ void interpreter(Cartography cartography, int n)
 			break;
 
 		case 'X':
-		case 'x': // maximo
-			commandBounders(cartography, n);
+		case 'x': //extremos
+			commandBoundaries(cartography, n);
 			break;
 
 		case 'R':
-		case 'r': // maximo
-			commandShortVersion(arg1, cartography, n);
+		case 'r': //resumo
+			commandParcelInformation(arg1, cartography, n);
 			break;
 
 		case 'V':
-		case 'v': // maximo
+		case 'v': // viagem
 			commandTrip(arg1, arg2, arg3, cartography, n);
 			break;
 
 		case 'Q':
-		case 'q': // maximo
-			commandBounders(arg1, cartography, n);
+		case 'q': // quantos
+			commandParcelHowMany(arg1, cartography, n);
 			break;
 
 		case 'C':
-		case 'c': // maximo
-			commandBounders(arg1, cartography, n);
+		case 'c': // conselhos
+			commandConselhos(cartography, n);
 			break;
 
 		case 'D':
-		case 'd': // maximo
-			commandBounders(arg1, cartography, n);
+		case 'd': // distritos
+			commandDistritos(cartography, n);
 			break;
 
 		case 'P':
-		case 'p': // maximo
-			commandBounders(arg1, cartography, n);
+		case 'p': // parcela
+			commandParcel(arg1, arg2, cartography, n);
 			break;
 
 		case 'A':
-		case 'a': // maximo
-			commandBounders(arg1, cartography, n);
+		case 'a': // adjacencias
+			commandAdjacencies(arg1, cartography, n);
 			break;
 
 		case 'F':
-		case 'f': // maximo
-			commandBounders(arg1, cartography, n);
+		case 'f': // fronteiras
+			commandBorders(arg1, cartography, n);
 			break;
 
 		case 'T':
-		case 't': // maximo
-			commandBounders(arg1, cartography, n);
+		case 't': // particao
+			commandPartition(arg1, cartography, n);
 			break;
 
 		case 'Z':
