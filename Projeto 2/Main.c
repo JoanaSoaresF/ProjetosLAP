@@ -4,6 +4,7 @@
  *
  * COMPILAÇÃO: gcc -std=c11 -o Main Cartography.c Main.c -lm
  */
+<<<<<<< HEAD
 
 #include "Cartography.h"
 
@@ -47,6 +48,17 @@ int main(void)
 	internalTests(false);
 	nCartography = loadCartography("map.txt", cartography);
 	showMemory(false);
+=======
+#define USE_PTS true;
+#include "Cartography.h"
+
+static Cartography cartography;	// variavel gigante
+static int nCartography = 0;
+
+int main(void)
+{
+	nCartography = loadCartography("map.txt", &cartography);
+>>>>>>> 249f7a6decbbc059d3fcfc9680d2f07d5bd7933f
 	showCartography(cartography, nCartography);
 	interpreter(cartography, nCartography);
 	return 0;
