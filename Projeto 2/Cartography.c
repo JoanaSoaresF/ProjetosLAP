@@ -192,9 +192,7 @@ static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 
 bool insideRectangle(Coordinates c, Rectangle r)
 {
-	// TODO
 	return c.lat >= r.bottomRight.lat && c.lat <= r.topLeft.lat && c.lon >= r.topLeft.lon && c.lon <= r.bottomRight.lon;
-	;
 }
 
 /* RING -------------------------------------- */
@@ -237,13 +235,19 @@ bool insideRing(Coordinates c, Ring r)
 
 bool adjacentRings(Ring a, Ring b)
 {
-	//TODO otimizar: ver se está fora do boundingbox?
 	bool touch = false;
+	Rectangle auxR = b.boundingBox;
+
 	for (int i = 0; i < a.nVertexes && !touch; i++)
 	{
-		for (int j = 0; j < b.nVertexes && !touch; j++)
-			if (sameCoordinates(a.vertexes[i], b.vertexes[j]))
-				touch = true;
+		if (insideRectangle(a.vertexes[i], auxR))
+		{
+			for (int j = 0; j < b.nVertexes && !touch; j++)
+			{
+				if (sameCoordinates(a.vertexes[i], b.vertexes[j]))
+					touch = true;
+			}
+		}
 	}
 	return touch;
 }
@@ -298,7 +302,6 @@ bool insideParcel(Coordinates c, Parcel p)
 
 bool adjacentParcels(Parcel a, Parcel b)
 {
-	//TODO otimizar: ver se está fora do boundingbox?
 	bool touch = false;
 	if (!sameIdentification(a.identification, b.identification, 3))
 	{
@@ -440,35 +443,43 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 	showParcel(maxPos, maxParcel, maxVertexes);
 }
 
+//X
 static void commandBoundaries(Cartography cartography, int m)
 {
 
-	int nPos, ePos, sPos, wPos = 0;
-	int n, e, s, w;
+	int nPos = 0,
+		ePos = 0,
+		sPos = 0,
+		wPos = 0;
+
+	double n = cartography[nPos].edge.boundingBox.topLeft.lat,
+		   e = cartography[ePos].edge.boundingBox.bottomRight.lon,
+		   s = cartography[sPos].edge.boundingBox.bottomRight.lat,
+		   w = cartography[wPos].edge.boundingBox.topLeft.lon;
 
 	for (int i = 1; i < m; i++)
 	{
-		n = cartography[nPos].edge.boundingBox.topLeft.lat;
-		e = cartography[ePos].edge.boundingBox.bottomRight.lon;
-		s = cartography[sPos].edge.boundingBox.bottomRight.lat;
-		w = cartography[wPos].edge.boundingBox.topLeft.lon;
 
 		Rectangle auxR = cartography[i].edge.boundingBox;
 		if (n < auxR.topLeft.lat)
 		{
 			nPos = i;
+			n = cartography[nPos].edge.boundingBox.topLeft.lat;
 		}
 		if (e < auxR.bottomRight.lon)
 		{
 			ePos = i;
+			e = cartography[ePos].edge.boundingBox.bottomRight.lon;
 		}
 		if (s > auxR.bottomRight.lat)
 		{
 			sPos = i;
+			s = cartography[sPos].edge.boundingBox.bottomRight.lat;
 		}
 		if (w > auxR.topLeft.lon)
 		{
 			wPos = i;
+			w = cartography[wPos].edge.boundingBox.topLeft.lon;
 		}
 	}
 
@@ -478,6 +489,7 @@ static void commandBoundaries(Cartography cartography, int m)
 	showParcel(wPos, cartography[wPos], -'W');
 }
 
+//R
 static void commandParcelInformation(int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(pos) || !checkPos(pos, n))
@@ -499,6 +511,7 @@ static void commandParcelInformation(int pos, Cartography cartography, int n)
 	printf("\n");
 }
 
+//V
 static void commandTrip(double lat, double lon, int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(lat) || !checkArgs(lon) || !checkArgs(pos) || !checkPos(pos, n))
@@ -517,6 +530,8 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
 
 	printf("%f\n", distance);
 }
+
+//Q
 static int numberFreguesia(int pos, Identification id, Cartography cartography, int n)
 {
 	int i = pos;
@@ -533,7 +548,6 @@ static int numberFreguesia(int pos, Identification id, Cartography cartography, 
 		m++;
 		i++;
 	}
-
 	return m;
 }
 
@@ -551,6 +565,7 @@ static int numberConselhosDistritos(Identification id, Cartography cartography, 
 	}
 	return m;
 }
+
 static void commandParcelHowMany(int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(pos) || !checkPos(pos, n))
@@ -570,16 +585,70 @@ static void commandParcelHowMany(int pos, Cartography cartography, int n)
 	showIdentification(pos, id, 1);
 	showValue(nDistritos);
 }
-static void commandConselhos(Cartography cartography, int n)
 
+//C
+static bool inVector(String s, StringVector v, int n)
 {
-	StringVector conselhos;
+	bool belongs = false;
+	int i = 0;
+	while (!belongs && i < n)
+	{
+		if (strcmp(v[i], s) == 0)
+			belongs = true;
+		i++;
+	}
+	return belongs;
 }
 
+int cmpstr(void const *a, void const *b)
+{
+	char const *aa = (char const *)a;
+	char const *bb = (char const *)b;
+
+	return strcmp(aa, bb);
+}
+
+static void commandConcelhos(Cartography cartography, int n)
+{
+	StringVector concelhos; //[MAX_STRING_VECTOR];
+	int m = 0;
+	String c;
+	for (int i = 0; i < n; i++)
+	{
+
+		strcpy(c, cartography[i].identification.concelho);
+		if (!inVector(c, concelhos, m))
+		{
+			strcpy(concelhos[m], c);
+			m++;
+		}
+	}
+
+	qsort(concelhos, m, MAX_STRING, cmpstr);
+	showStringVector(concelhos, m);
+}
+
+//D
 static void commandDistritos(Cartography cartography, int n)
 {
+	StringVector distritos;
+	int m = 0;
+	String d;
+	for (int i = 0; i < n; i++)
+	{
+		strcpy(d, cartography[i].identification.distrito);
+		if (!inVector(d, distritos, m))
+		{
+			strcpy(distritos[m], d);
+			m++;
+		}
+	}
+
+	qsort(distritos, m, MAX_STRING, cmpstr);
+	showStringVector(distritos, m);
 }
 
+//P
 static void commandParcel(double lat, double lon, Cartography cartography, int n)
 {
 	if (!checkArgs(lat) || !checkArgs(lon))
@@ -606,18 +675,38 @@ static void commandParcel(double lat, double lon, Cartography cartography, int n
 	}
 }
 
+//A
 static void commandAdjacencies(int pos, Cartography cartography, int n)
 {
 	if (!checkArgs(pos) || !checkPos(pos, n))
 		return;
+
+	bool m = false;
+	
+	for (int i = 0; i < n; i++)
+	{
+		if (adjacentParcels(cartography[pos], cartography[i]))
+		{
+			showIdentification(i, cartography[i].identification, 3);
+			printf("\n");
+			m = true;
+		}
+	}
+
+	if (!m)
+	{
+		printf("NAO HA ADJACENCIAS\n");
+	}
 }
 
+//F
 static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 {
 	if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
 		return;
 }
 
+//T
 static void commandPartition(int dist, Cartography cartography, int n)
 {
 	if (!checkArgs(dist))
@@ -669,7 +758,7 @@ void interpreter(Cartography cartography, int n)
 
 		case 'C':
 		case 'c': // conselhos
-			commandConselhos(cartography, n);
+			commandConcelhos(cartography, n);
 			break;
 
 		case 'D':

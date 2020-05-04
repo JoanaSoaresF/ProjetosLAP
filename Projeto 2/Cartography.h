@@ -23,7 +23,6 @@ typedef char String[MAX_STRING];
 typedef String StringVector[MAX_STRING_VECTOR];
 
 
-
 /* IDENTIFICATION -------------------------------------- */
 
 typedef struct {	// Identificação duma parcela
