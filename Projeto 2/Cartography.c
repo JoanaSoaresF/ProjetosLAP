@@ -558,7 +558,6 @@ static int numberConselhosDistritos(Identification id, Cartography cartography, 
 	{
 		if (sameIdentification(id, cartography[i].identification, z))
 			m++;
-	
 	}
 	return m;
 }
@@ -742,7 +741,7 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 
 	int min = 0;
 
-	if (pos1 != pos2) 
+	if (pos1 != pos2)
 	{
 		int adjsParcels[n];
 		adjsParcels[0] = pos1;
@@ -750,7 +749,8 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 		while (!belongs(pos2, adjsParcels, sizeAux))
 		{
 			sizeAux = adjacencies(adjsParcels, sizeAux, cartography, n);
-			if (sizeAux == sizePrev) { //no changes in the adjacencies vector, therefor no path
+			if (sizeAux == sizePrev)
+			{ //no changes in the adjacencies vector, therefor no path
 				i = -1;
 				break;
 			}
@@ -768,12 +768,55 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 	else
 		printf("%d\n", min);
 }
-
 //T
 static void commandPartition(int dist, Cartography cartography, int n)
 {
 	if (!checkArgs(dist))
 		return;
+
+	// all subsets
+
+	int allsubsets [n][n];
+	
+	int adjsParcels[n];
+	adjsParcels[0] = 0;
+	int sizeAux = 1, sizePrev = 0, i = 0;
+	while (i<n)
+	{
+		sizeAux = adjacencies(adjsParcels, sizeAux, cartography, n);
+		if (sizeAux == sizePrev)
+		{ //no changes in the adjacencies vector, therefor no path
+			i = -1;
+			break;
+		}
+		else
+		{
+			sizePrev = sizeAux;
+			i++;
+		}
+	}
+
+	//filter
+
+	int listSubsets[n][n];
+	int sizeSub = 0;  //current subset length
+	int sizeList = 0; //length of the list of subsets
+	Parcel p1, p2;
+
+	for (int i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
+		{
+			p1 = cartography[i];
+			for (int j = 0; j < n; i++)
+			{
+				p2 = cartography[j];
+				double d = haversine(p1.edge.vertexes[0], p2.edge.vertexes[0]);
+				if (d > dist)
+				{
+					listSubsets[sizeList][sizeSub] =999;
+				}
+			}
+		}
 }
 
 void interpreter(Cartography cartography, int n)
