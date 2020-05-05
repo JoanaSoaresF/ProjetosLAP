@@ -786,13 +786,19 @@ static int leftAdjs(int *allsubsets, int totalCheck, int nCartography, int *left
 	return sizeLeft;
 }
 
-static int allAdjacencies(int *allsubsets, int sizeSubsets, Cartography cartography, int n)
+static int allAdjacencies(int allsubsets [][], int sizeSubsets[], int sizeAll, Cartography cartography, int n)
 {
-	int sizeAux = sizeSubsets, sizePrev = 0, i = 0;
+	int sizeAux = sizeSubsets;
+	int sizePrev = 0, i = 0;
 	while (sizeAux != sizePrev && i < n)
 	{
 		sizePrev = sizeAux;
-		sizeAux = adjacencies(allsubsets, sizeAux, cartography, n);
+		for(int j = 0; j<sizeAll; j++) {
+			sizeAux = adjacencies(allsubsets[j][0], sizeSubsets[j], cartography, n);
+
+		}
+		
+		i++;
 	}
 
 	return sizeAux;
@@ -862,8 +868,8 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		sizeSub = 1;
 		sizeSub = allAdjacencies(allsubsets[sizeAll], sizeSub, cartography, n);
 		sizesSubsets[sizeAll] = sizeSub;
-		sizeLeft = leftAdjs(*allsubsets, totalCheck, n, left);
 		totalCheck += sizeSub;
+		sizeLeft = leftAdjs(*allsubsets, totalCheck, n, left);
 		sizeAll++;
 	}
 
@@ -871,7 +877,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 	int groups[sizeAll][n];
 	int sizesGroups[sizeAll];
-	groups[0] = allsubsets[0]; // adicionamos o primeiro grupo
+	memcpy(groups[0], allsubsets[0], sizesSubsets[0]); // adicionamos o primeiro grupo
 	int group = 1;
 	int checked[sizeAll];
 	for(int i = 0; i<sizeAll; i++) {
@@ -901,7 +907,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		next = findNext(checked, sizeAll);
 		if (next >= 0)
 		{
-			groups[group] = allsubsets[next];
+			memcpy(groups[group], allsubsets[next], sizesSubsets[next] );
 			sizesGroups[group] = sizesSubsets[next];
 			group++;
 		}
