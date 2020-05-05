@@ -803,10 +803,10 @@ static double groupsParcelDist(int *v1, int c1, int *v2, int c2, Cartography car
 }
 
 //T
-static bool llbelongs(int x, int **v, int *vCounter, int counter)
+static bool llbelongs(int x, int ** v, int *vCounter, int counter)
 {
 	for (int i = 0; i < counter; i++)
-		if (belongs(x, v[i], vCounter[i]))
+		if (belongs(x, (int *) v[i], vCounter[i]))
 			return true;
 	return false;
 }
@@ -822,6 +822,7 @@ static int fullAdjacencies(int *v, Cartography cartography, int n)
 			return sizeAux;
 		sizePrev = sizeAux;
 	}
+	return sizeAux;
 }
 /**
  * aqui vamos agrupando grupos com grupos, tendo em conta a distancia entre si
@@ -873,15 +874,26 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 	// all subsets
 
-	int allsubsets[n][n];
+	int ** allsubsets = (int **) malloc(n*sizeof(int));
+	for (int i=0; i<n; i++) 
+         allsubsets[i] = (int *)malloc(n * sizeof(int)); 
+
 	int listCounter = 0;
 	int llistCounter[n];
 	for (int i = 0; i < n; i++)
 	{
-		if (!llbelongs(i, (int **) allsubsets, llistCounter, listCounter))
+		if (!llbelongs(i, allsubsets, llistCounter, listCounter))
+		{
+			allsubsets[listCounter][0] = i;
+			llistCounter[listCounter] = fullAdjacencies(allsubsets[listCounter], cartography, n);
+			listCounter++;
+
+			/*if (!llbelongs(i, (int **) allsubsets, llistCounter, listCounter))
 		{
 			allsubsets[listCounter][llistCounter[listCounter]] = i;
 			llistCounter[i] = fullAdjacencies(allsubsets[listCounter++], cartography, n);
+		}
+			*/
 		}
 	}
 
@@ -894,7 +906,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		memcpy(allsubsets, finalSubsets, sizeof(finalSubsets));
 		memcpy(llistCounter, lFSCounter, sizeof(lFSCounter));
 		listCounter = fSCounter;
-		groupByDistance((int **) allsubsets, llistCounter, listCounter, (int **)finalSubsets, lFSCounter, &fSCounter, dist, cartography, n);
+		groupByDistance(allsubsets, llistCounter, listCounter, (int **)finalSubsets, lFSCounter, &fSCounter, dist, cartography, n);
 	}
 
 	//TODO fazer o print como ele quer!!!!!!!!!!!!!!!!!!!!!!
@@ -905,47 +917,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 			printf("%d ",finalSubsets[i][j]);
 		printf("\n");
 	}
-	// TODO apaguei a copia do while do command borders que tinhas aqui
-	/*	int adjsParcels[n];
-	adjsParcels[0] = 0;
-	int sizeAux = 1, sizePrev = 0, i = 0;
-	while (i < n)
-	{
-		sizeAux = adjacencies(adjsParcels, sizeAux, cartography, n);
-		if (sizeAux == sizePrev)
-		{ //no changes in the adjacencies vector, therefor no path
-			i = -1;
-			break;
-		}
-		else
-		{
-			sizePrev = sizeAux;
-			i++;
-		}
-	}
-
-	//filter
-
-	int listSubsets[n][n];
-	int sizeSub = 0;  //current subset length
-	int sizeList = 0; //length of the list of subsets
-	Parcel p1, p2;
-
-	for (int i = 0; i < n; i++)
-		for (int i = 0; i < n; i++)
-		{
-			p1 = cartography[i];
-			for (int j = 0; j < n; i++)
-			{
-				p2 = cartography[j];
-				double d = haversine(p1.edge.vertexes[0], p2.edge.vertexes[0]);
-				if (d > dist)
-				{
-					listSubsets[sizeList][sizeSub] = 999;
-				}
-			}
-		}
-*/
+	//free(allsubsets);
 }
 
 void interpreter(Cartography cartography, int n)
