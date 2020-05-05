@@ -841,7 +841,7 @@ static void groupByDistance(int **v, int *lvc, int vc, int **lld, int *ldc, int 
 	//memcpy(laux1counter, lvc, sizeof(lvc));
 	for (int i = 0; i < vc; i++)
 	{
-		//TODO talvez possa tirar este if
+		//TODO talvez possa tirar este if (nao apagar)
 		//if (!llbelongs(v[i][0], (int **) llaux2, laux2counter, aux2counter))
 		//{
 			bool copied = false;
