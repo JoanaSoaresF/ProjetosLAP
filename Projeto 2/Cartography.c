@@ -704,9 +704,11 @@ static bool belongs(int x, int *v, int n)
 	int i = 0;
 	while (!belongs && i < n)
 	{
+		printf("%d\n", i);
 		if (x == v[i])
 			belongs = true;
 		i++;
+		printf("%d\n", i);
 	}
 	return belongs;
 }
@@ -803,11 +805,19 @@ static double groupsParcelDist(int *v1, int c1, int *v2, int c2, Cartography car
 }
 
 //T
-static bool llbelongs(int x, int ** v, int *vCounter, int counter)
+static bool llbelongs(int x, int **v, int *vCounter, int counter)
 {
+	printf("PreFor\n");
 	for (int i = 0; i < counter; i++)
-		if (belongs(x, (int *) v[i], vCounter[i]))
+	{
+		printf("PreIf\n");
+		if (belongs(x, (int *)v[i], vCounter[i]))
+		{
 			return true;
+		}
+		printf("PosIf\n");
+	}
+	printf("PosFor\n");
 	return false;
 }
 
@@ -845,21 +855,21 @@ static void groupByDistance(int **v, int *lvc, int vc, int **lld, int *ldc, int 
 		//TODO talvez possa tirar este if (nao apagar)
 		//if (!llbelongs(v[i][0], (int **) llaux2, laux2counter, aux2counter))
 		//{
-			bool copied = false;
-			for (int j = 0; j < aux2counter; j++)
+		bool copied = false;
+		for (int j = 0; j < aux2counter; j++)
+		{
+			if (groupsParcelDist(v[i], lvc[i], llaux2[j], laux2counter[j], cartography) <= dist)
 			{
-				if (groupsParcelDist(v[i], lvc[i], llaux2[j], laux2counter[j], cartography) <= dist)
-				{
-					memcmp(&llaux2[j][laux2counter[j]], v[i], lvc[i] * sizeof(int));
-					laux2counter[j] += lvc[i];
-					copied = true;
-				}
+				memcmp(&llaux2[j][laux2counter[j]], v[i], lvc[i] * sizeof(int));
+				laux2counter[j] += lvc[i];
+				copied = true;
 			}
-			if (!copied)
-			{
-				memcpy(llaux2[aux2counter], v[i], lvc[i] * sizeof(int));
-				laux2counter[aux2counter++] = lvc[i];
-			}
+		}
+		if (!copied)
+		{
+			memcpy(llaux2[aux2counter], v[i], lvc[i] * sizeof(int));
+			laux2counter[aux2counter++] = lvc[i];
+		}
 		//}
 	}
 	memcpy(lld, llaux2, sizeof(llaux2));
@@ -873,19 +883,28 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		return;
 
 	// all subsets
-
-	int ** allsubsets = (int **) malloc(n*sizeof(int));
-	for (int i=0; i<n; i++) 
-         allsubsets[i] = (int *)malloc(n * sizeof(int)); 
-
-	int listCounter = 0;
-	int llistCounter[n];
+	int **allsubsets = (int **)malloc(n * sizeof(int));
 	for (int i = 0; i < n; i++)
 	{
+		allsubsets[i] = (int *)malloc(n * sizeof(int));
+	}
+	int *llistCounter = malloc(n * sizeof(int));
+	for (int i = 0; i < n; i++)
+	{
+		llistCounter[i] = 0;
+	}
+	int listCounter = 0;
+
+	for (int i = 0; i < n; i++)
+	{
+		printf("PreLLbelongs\n%d\n", i);
 		if (!llbelongs(i, allsubsets, llistCounter, listCounter))
 		{
+			printf("PosLLbelongs\n");
 			allsubsets[listCounter][0] = i;
+			printf("%d\n", i);
 			llistCounter[listCounter] = fullAdjacencies(allsubsets[listCounter], cartography, n);
+			printf("%d\n", i);
 			listCounter++;
 
 			/*if (!llbelongs(i, (int **) allsubsets, llistCounter, listCounter))
@@ -896,7 +915,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 			*/
 		}
 	}
-
+	/*
 	//list adjoin acording to dist
 	int finalSubsets[n][n];
 	int fSCounter = 0;
@@ -908,13 +927,15 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		listCounter = fSCounter;
 		groupByDistance(allsubsets, llistCounter, listCounter, (int **)finalSubsets, lFSCounter, &fSCounter, dist, cartography, n);
 	}
-
+*/
 	//TODO fazer o print como ele quer!!!!!!!!!!!!!!!!!!!!!!
 	//TODO se quiseres esperar para eu te explicar o que fiz é mais facil do que veres tanto código de uma vez
 	//print provisorio
-	for(int i = 0; i< fSCounter; i++){
-		for(int j = 0; j< lFSCounter[i];j++)
-			printf("%d ",finalSubsets[i][j]);
+	printf("printar\n");
+	for (int i = 0; i < listCounter; i++)
+	{
+		for (int j = 0; j < llistCounter[i]; j++)
+			printf("%d ", allsubsets[i][j]);
 		printf("\n");
 	}
 	//free(allsubsets);
