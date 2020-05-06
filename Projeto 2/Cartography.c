@@ -801,7 +801,7 @@ static int joinGroup(Coordinates c1, int *subsets, int nSubsets, int sizes[], Ca
 			int p = *((subsets + i * sizes[i]) + j);
 			Coordinates c2 = c[p].edge.vertexes[0];
 			double d = haversine(c1, c2);
-			if (d < dist)
+			if (d > dist)
 			{
 				allDist = false;
 			}
@@ -821,17 +821,17 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	if (!checkArgs(dist))
 		return;
 
-	// all subsets
-	int subSets[n][n];
-	int nSubsets = 1;
-	int sizeSubsets[n];
+	int subSets[n][n]; // groups formed
+	int nSubsets = 1; // number of groups formed
+	int sizeSubsets[n]; // sizes of each group
 
-	subSets[0][0] = 0; //começamos o primeiro grupo com a primeira parcela
+	subSets[0][0] = 0; //start of the first group with the first parcel
 	sizeSubsets[0] = 1;
 
 	for (int i = 0; i < n; i++)
 	{
-		bool distAll = true;
+		/*if the distance of which parcel of the group and the parcel i is greater than dist*/
+		bool distAll = true; 
 		int currentGroup = nSubsets - 1;
 		int currentGroupSize = sizeSubsets[nSubsets - 1];
 
