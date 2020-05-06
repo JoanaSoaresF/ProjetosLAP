@@ -771,14 +771,14 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 }
 //T
 
-static bool inSubset(int x, int* subsets, int nSubsets, int sizes[])
+static bool inSubset(int x, int *subsets, int nSubsets, int sizes[])
 {
 	bool found = false;
 	for (int i = 0; i < nSubsets && !found; i++)
 	{
 		for (int j = 0; j < sizes[i] && !found; j++)
 		{ /* *((arr+i*n) + j))*/
-			int y = *((subsets+i*sizes[i]) + j);
+			int y = *((subsets + i * sizes[i]) + j);
 			if (y == x)
 			{
 				found = true;
@@ -788,6 +788,32 @@ static bool inSubset(int x, int* subsets, int nSubsets, int sizes[])
 	}
 
 	return found;
+}
+
+static int joinGroup(Coordinates c1, int *subsets, int nSubsets, int sizes[], Cartography c, double dist)
+{
+	int join = -1;
+	for (int i = 0; i < nSubsets && join == -1; i++)
+	{
+		bool allDist = true;
+		for (int j = 0; j < sizes[i] && allDist; j++)
+		{
+			int p = *((subsets + i * sizes[i]) + j);
+			Coordinates c2 = c[p].edge.vertexes[0];
+			double d = haversine(c1, c2);
+			if (d < dist)
+			{
+				allDist = false;
+			}
+		}
+		if (allDist)
+		{
+			join = i;
+			return join;
+		}
+	}
+
+	return join;
 }
 
 static void commandPartition(int dist, Cartography cartography, int n)
@@ -809,7 +835,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		int currentGroup = nSubsets - 1;
 		int currentGroupSize = sizeSubsets[nSubsets - 1];
 
-		if (!inSubset(i, (int*) subSets, nSubsets, sizeSubsets))
+		if (!inSubset(i, (int *)subSets, nSubsets, sizeSubsets))
 		{
 			Coordinates c1, c2;
 			c1 = cartography[i].edge.vertexes[0];
@@ -821,29 +847,40 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 				double d = haversine(c1, c2);
 				if (d > dist)
-				{ // novo grupo
+				{ // novo grupo?
+
 					distAll = false;
-					subSets[nSubsets][0] = i;
-					sizeSubsets[nSubsets] = 1;
-					nSubsets++;
+					//verifica se pode ser unido com algum grupo existente 
+					int join = joinGroup(c1, (int *)subSets, nSubsets, sizeSubsets, cartography, dist);
+					if (join == -1) // caso em que nao se pode juntar, criamos um novo grupo
+					{
+						subSets[nSubsets][0] = i;
+						sizeSubsets[nSubsets] = 1;
+						nSubsets++;
+					}
+					else // caso em que podemos juntar a um grupo ja existente
+					{
+						subSets[join][sizeSubsets[join]] = i;
+						sizeSubsets[join]++;
+					}
 				}
 			}
 			if (distAll)
 			{ // juntar ao grupo atual
-
 				subSets[currentGroup][currentGroupSize] = i;
 				sizeSubsets[currentGroup]++;
 			}
 		}
 	}
 
-	for(int i = 0; i<nSubsets; i++) {
-		for(int j = 0; j<sizeSubsets[i]; j++) {
+	for (int i = 0; i < nSubsets; i++)
+	{
+		for (int j = 0; j < sizeSubsets[i]; j++)
+		{
 			printf("%d ", subSets[i][j]);
 		}
-		printf("\n");
+		printf("\n\n");
 	}
-	
 }
 
 void interpreter(Cartography cartography, int n)
