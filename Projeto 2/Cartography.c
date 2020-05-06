@@ -198,9 +198,7 @@ static Ring readRing(FILE *f)
 	r.vertexes = (Coordinates *)malloc(n * sizeof(Coordinates));
 
 	if (r.vertexes == NULL)
-	{
 		error("Erro: memoria nao pode ser alocada.");
-	}
 
 	for (i = 0; i < n; i++)
 	{
@@ -262,9 +260,7 @@ static Parcel readParcel(FILE *f)
 	p.holes = (Ring *)malloc(n * sizeof(Ring));
 
 	if (p.holes == NULL)
-	{
 		error("Erro: memoria nao pode ser alocada.");
-	}
 
 	for (i = 0; i < n; i++)
 	{
@@ -333,9 +329,7 @@ int loadCartography(String fileName, Cartography *cartography)
 	*cartography = malloc(n * sizeof(Parcel));
 
 	if (*cartography == NULL)
-	{
 		error("Erro: memoria nao pode ser alocada.");
-	}
 
 	for (i = 0; i < n; i++)
 	{
@@ -792,102 +786,9 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 //T
 
 /**
- * Testes if the value x occurs in subsets. 
- * nSubsets is the number of groups in subsets
- * sizes is a vector with the individual group sizes
- */
-static bool inSubset(int x, int *subsets, int nSubsets, int sizes[])
-{
-	bool found = false;
-	for (int i = 0; i < nSubsets && !found; i++)
-	{
-		for (int j = 0; j < sizes[i] && !found; j++)
-		{ /* *((arr+i*n) + j))*/
-			int y = *((subsets + i * sizes[i]) + j);
-			if (y == x)
-			{
-				found = true;
-				return found;
-			}
-		}
-	}
-
-	return found;
-}
-
-/**
- * Tests if the coordinate c1 distance to all parcels already grouped in subsets is less then dist.
- * If it is then returns the group where that happens
- * If not returns -1
- * nSubsets is the number of groups formed in subsets, and sizes is a vector with all the 
- * sizes os the individual groups
- */
-static int joinGroup(Coordinates c1, int *subsets, int nSubsets, int sizes[], Cartography c, double dist)
-{
-	int join = -1;
-	for (int i = 0; i < nSubsets && join == -1; i++)
-	{
-		bool allDist = true;
-		for (int j = 0; j < sizes[i] && allDist; j++)
-		{
-			int p = *((subsets + i * sizes[i]) + j);
-			Coordinates c2 = c[p].edge.vertexes[0];
-			double d = haversine(c1, c2);
-			if (d > dist)
-			{
-				allDist = false;
-			}
-		}
-		if (allDist)
-		{
-			join = i;
-			return join;
-		}
-	}
-
-	return join;
-}
-
-/**
- * Computes the distance between two groups. 
- * Is the groups are the same, they have parcels in commum. In that case return -1
- * Different groups don't have the same parcel. Which parcel belongs only in one group
- */
-static double groupDistance(int *group1, int n1, int *group2, int n2, Cartography c)
-{
-
-	Coordinates c1, c2;
-	c1 = c[group1[0]].edge.vertexes[0];
-	c2 = c[group2[0]].edge.vertexes[0];
-
-	double d = haversine(c1, c2);
-	double aux;
-
-	for (int i = 1; i < n1; i++)
-	{
-		c1 = c[group1[i]].edge.vertexes[0];
-		for (int j = 1; j < n2; j++)
-		{
-
-			if(group1[i]==group2[j]) { //same group
-				return -1;
-			}
-			c2 = c[group2[j]].edge.vertexes[0];
-			aux = haversine(c1, c2);
-			if (aux < d)
-			{
-				d = aux;
-			}
-		}
-	}
-
-	return d;
-}
-
-/**
- * Helper method to identify which groups are not in the final groups
- * Groups already added have the value 1
- * Group that are not added yet have the value 0
+ * Helper method to identify which parcels are not in the final parcels
+ * Parcels already added have the value 1
+ * Parcels that are not added yet have the value 0
  */
 static int findNext(int *v, int n)
 {
@@ -899,6 +800,22 @@ static int findNext(int *v, int n)
 		}
 	}
 	return -1;
+}
+
+/**
+ * Calculates tha minimum distance of the parcel c to tha group g that has c elements
+ */
+static double dCalc(int *g, int c, int p, Cartography cartography)
+{
+	Coordinates cp = cartography[p].edge.vertexes[0];
+	double d = haversine(cartography[g[0]].edge.vertexes[0], cp);
+	double aux;
+	for (int i = 1; i < c; i++)
+	{
+		aux = haversine(cartography[g[i]].edge.vertexes[0], cp);
+		if (aux < d && g[i] != p)
+			d = aux;
+	}
 }
 
 static void commandPartition(int dist, Cartography cartography, int n)
@@ -913,104 +830,58 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 	subSets[0][0] = 0; //start of the first group with the first parcel
 	sizeSubsets[0] = 1;
-	
-	for (int i = 0; i < n; i++)
-	{
-		/*if the distance of which parcel of the group and the parcel i is greater than dist*/
-		bool distAll = true;
-		int currentGroup = nSubsets - 1;				  // current group to test the parcel i
-		int currentGroupSize = sizeSubsets[currentGroup]; //current size of that group
-
-		if (!inSubset(i, (int *)subSets, nSubsets, sizeSubsets))
-		{
-			Coordinates c1, c2;
-			c1 = cartography[i].edge.vertexes[0];
-
-			for (int j = 0; j < currentGroupSize && distAll; j++)
-			{ // ver cada parcela do grupo atual
-
-				c2 = cartography[subSets[currentGroup][j]].edge.vertexes[0];
-
-				double d = haversine(c1, c2);
-				if (d >= dist)
-				{
-					/*if the d> dist we need to test if we need to 
-					create a new parcel or join it to other group*/
-
-					distAll = false;
-
-					int join = joinGroup(c1, (int *)subSets, nSubsets, sizeSubsets, cartography, dist);
-					if (join == -1)
-					{ /*the parcel cannot be joined to other group so we create a new group*/
-
-						subSets[nSubsets][0] = i;
-						sizeSubsets[nSubsets] = 1;
-						nSubsets++;
-					}
-					else
-					{ // we can join the parcel to a already created group
-						subSets[join][sizeSubsets[join]] = i;
-						sizeSubsets[join] = sizeSubsets[join] + 1;
-					}
-				}
-			}
-			if (distAll)
-			{ // the parcel can be grouped in the current group
-				subSets[currentGroup][currentGroupSize] = i;
-				sizeSubsets[currentGroup] = sizeSubsets[currentGroup]+ 1;
-			}
-		}
-	}
-
-	//join groups if necessary 
-	//(because we could have added parcels that changed the distances between groups)
-	int finalGroups[nSubsets][n]; // final groups
-	int nFinalGroups = 1; // number of final groups
-	int sizesGroups[nSubsets]; //sizes of the final groups
-	sizesGroups[0] = sizeSubsets[0]; 
-	memcpy(finalGroups[0], subSets[0], sizeSubsets[0] * sizeof(int));// we add the first group
-	
+	int used[n]; //saves the parcels that were already added
+	used[0] = 1;
+	//
+	int lastCounter = 0;
 	double d;
 
-	int lastGroupSize = 0; // records the previous size of the group
-	int subSetsAdded[nSubsets]; //groups that we already added to the final
-	subSetsAdded[0] = 1;
-	int next;
-	for (int i = 0; i < nFinalGroups; i++)
+	for (int i = 0; i < nSubsets; i++)
 	{
-		while (lastGroupSize != sizesGroups[i]) // continue until no more changes
+		while (lastCounter != sizeSubsets[i]) //if the groups have already achieved their max size
 		{
-			lastGroupSize = sizesGroups[i];
-			for (int j = 0; j < nSubsets; j++)
+			lastCounter = sizeSubsets[i]; // size of the current group
+			for (int j = 1; j < n; j++)
 			{
-
-				d = groupDistance(finalGroups[i], sizesGroups[i], subSets[j], sizeSubsets[j], cartography);
-				if (d < dist && d>0) //if dist is <0 then it is the same group
-				{ // we have to merge the two groups
-					memcpy(&finalGroups[i][sizesGroups[i]], subSets[j], sizeSubsets[j] * sizeof(int));
-					sizesGroups[i] += sizeSubsets[j];
-					subSetsAdded[j] = 1;
+				//distance between the parcel j and the current group
+				d = dCalc(subSets[i], sizeSubsets[i], j, cartography);
+				if (d < dist && used[j] != 1)
+				{ // add the parcel to the current group
+					subSets[i][sizeSubsets[i]] = j;
+					sizeSubsets[i]++;
+					used[j] = 1;
 				}
 			}
 		}
-		next = findNext(subSetsAdded, nSubsets); // next group to be added to the final
-		if(next > 0 ) { //if there are groups to add
-			memcpy(finalGroups[nFinalGroups], subSets[next], sizeSubsets[next] * sizeof(int));
-			subSetsAdded[next] = 1;
-			sizesGroups[nFinalGroups] = sizeSubsets[next];
-			nFinalGroups++;
 
+		int h = findNext(used, n); // find the next parcel to check
+		if (h > 0)
+		{ //if there is a next parcel to check create a new group with it
+
+			subSets[nSubsets][sizeSubsets[nSubsets]] = h;
+			sizeSubsets[nSubsets] = 1;
+			nSubsets++;
+			used[h] = 1;
 		}
 	}
 
 	//print groups
-	for (int i = 0; i < nFinalGroups; i++)
+	for (int i = 0; i < nSubsets; i++)
 	{
-		for (int j = 0; j < sizesGroups[i]; j++)
+		for (int j = 0; j < sizeSubsets[i]; j++)
 		{
-			printf("%d ", finalGroups[i][j]);
+			if (j < 0 || subSets[i][j - 1] != subSets[i][j] - 1)
+			{
+				if (subSets[i][j + 1] == subSets[i][j] + 1)
+					printf("%d-", subSets[i][j]);
+
+				else
+					printf("%d ", subSets[i][j]);
+			}
+			else if (!(subSets[i][j - 1] + 1 == subSets[i][j] && subSets[i][j + 1] == subSets[i][j] + 1))
+				printf("%d ", subSets[i][j]);
 		}
-		printf("\n\n");
+		printf("\n");
 	}
 }
 
