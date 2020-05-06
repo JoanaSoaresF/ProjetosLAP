@@ -818,6 +818,13 @@ static double dCalc(int *g, int c, int p, Cartography cartography)
 	}
 }
 
+static void reset(int* v, int n) {
+	for(int i = 0; i<n; i++){
+		v[i] = 0;
+	}
+
+}
+
 static void commandPartition(int dist, Cartography cartography, int n)
 {
 	if (!checkArgs(dist))
@@ -825,12 +832,15 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 	//form groups
 	int subSets[n][n];	// groups formed
+	reset((int*) subSets, n*n);
 	int nSubsets = 1;	// number of groups formed
 	int sizeSubsets[n]; // sizes of each group
+	reset(sizeSubsets, n);
 
 	subSets[0][0] = 0; //start of the first group with the first parcel
 	sizeSubsets[0] = 1;
 	int used[n]; //saves the parcels that were already added
+	reset(used, n);
 	used[0] = 1;
 	//
 	int lastCounter = 0;
@@ -872,11 +882,11 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		{
 			if (j < 0 || subSets[i][j - 1] != subSets[i][j] - 1)
 			{
-				if (subSets[i][j + 1] == subSets[i][j] + 1)
-					printf("%d-", subSets[i][j]);
+				if (subSets[i][j + 1] != subSets[i][j] + 1)
+					printf("%d ", subSets[i][j]);
 
 				else
-					printf("%d ", subSets[i][j]);
+					printf("%d-", subSets[i][j]);
 			}
 			else if (!(subSets[i][j - 1] + 1 == subSets[i][j] && subSets[i][j + 1] == subSets[i][j] + 1))
 				printf("%d ", subSets[i][j]);
