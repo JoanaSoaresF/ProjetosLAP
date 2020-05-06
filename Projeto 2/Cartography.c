@@ -771,74 +771,19 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 }
 //T
 
-static int leftAdjs(int *allsubsets, int totalCheck, int nCartography, int *left)
+static bool inSubset(int x, int* subsets, int nSubsets, int sizes[])
 {
-	int sizeLeft = 0;
-
-	for (int i = 0; i < nCartography; i++)
+	bool found = false;
+	for (int i = 0; i < nSubsets && !found; i++)
 	{
-		if (!belongs(i, allsubsets, totalCheck))
-		{
-			left[sizeLeft] = i;
-			sizeLeft++;
-		}
-	}
-	return sizeLeft;
-}
-
-static int allAdjacencies(int allsubsets [][], int sizeSubsets[], int sizeAll, Cartography cartography, int n)
-{
-	int sizeAux = sizeSubsets;
-	int sizePrev = 0, i = 0;
-	while (sizeAux != sizePrev && i < n)
-	{
-		sizePrev = sizeAux;
-		for(int j = 0; j<sizeAll; j++) {
-			sizeAux = adjacencies(allsubsets[j][0], sizeSubsets[j], cartography, n);
-
-		}
-		
-		i++;
-	}
-
-	return sizeAux;
-}
-
-static bool distGroups(double dist, int *group1, int n1, int *group2, int n2, Cartography c)
-{
-	bool allDist = true;
-	for (int i = 0; i < n1 && allDist; i++)
-	{
-		Parcel p1 = c[i];
-		for (int j = 0; j < n2 && allDist; j++)
-		{
-			Parcel p2 = c[j];
-			double d = haversine(p1.edge.vertexes[0], p2.edge.vertexes[0]);
-
-			if (d < dist)
+		for (int j = 0; j < sizes[i] && !found; j++)
+		{ /* *((arr+i*n) + j))*/
+			int y = *((subsets+i*sizes[i]) + j);
+			if (y == x)
 			{
-				allDist = false;
+				found = true;
+				return found;
 			}
-		}
-	}
-	return allDist;
-}
-
-static void joinGroups(int *group1, int n1, int *group2, int n2)
-{
-	
-	for(int i = n1, j = 0; j<n2 ;i++, j++) {
-		group1[i] = group2[j];
-	}
-}
-
-static int findNext(int *v, int n)
-{
-	int found = -1;
-	int i = 0;
-	while(found =-1 && i<n) {
-		if(v[i]==1){
-			found = i;
 		}
 	}
 
@@ -851,75 +796,54 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		return;
 
 	// all subsets
+	int subSets[n][n];
+	int nSubsets = 1;
+	int sizeSubsets[n];
 
-	int allsubsets[n][n];
-	int sizeSub = 1; //current subset length
-	int sizeAll = 0; //length of the list of subsets
-	int left[n];
-	left[0] = 0; //primeiro encontramos as adjajencias da primeira parcela
-	int totalCheck = 0;
-	int sizeLeft = n;
+	subSets[0][0] = 0; //começamos o primeiro grupo com a primeira parcela
+	sizeSubsets[0] = 1;
 
-	int sizesSubsets[n];
-
-	while (sizeLeft > 0)
+	for (int i = 0; i < n; i++)
 	{
-		allsubsets[sizeAll][0] = left[0];
-		sizeSub = 1;
-		sizeSub = allAdjacencies(allsubsets[sizeAll], sizeSub, cartography, n);
-		sizesSubsets[sizeAll] = sizeSub;
-		totalCheck += sizeSub;
-		sizeLeft = leftAdjs(*allsubsets, totalCheck, n, left);
-		sizeAll++;
-	}
+		bool distAll = true;
+		int currentGroup = nSubsets - 1;
+		int currentGroupSize = sizeSubsets[nSubsets - 1];
 
-	//filter
-
-	int groups[sizeAll][n];
-	int sizesGroups[sizeAll];
-	memcpy(groups[0], allsubsets[0], sizesSubsets[0]); // adicionamos o primeiro grupo
-	int group = 1;
-	int checked[sizeAll];
-	for(int i = 0; i<sizeAll; i++) {
-		checked[i] = 0;
-	}
-	checked[0] = 1;
-	int next;
-
-	for (int i = 0; i < group; i++)
-	{
-		bool allDist = true;
-
-		for (int j = 1; j < sizeAll; j++) 
+		if (!inSubset(i, (int*) subSets, nSubsets, sizeSubsets))
 		{
-			if (checked[j] != 1) // se for igual a um ja foi adicionado a um grupo
-			{
-				allDist = distGroups(dist, groups[i], sizesGroups[i], allsubsets[j], sizesSubsets[j], cartography);
+			Coordinates c1, c2;
+			c1 = cartography[i].edge.vertexes[0];
 
-				if (!allDist) // se a distancia for menor entao e incluido no grupo
-				{
-					joinGroups(groups[i], sizesGroups[i], allsubsets[j], sizesSubsets[j]);
-					sizesGroups[i] += sizesSubsets[j];
-					checked[j] = 1;
+			for (int j = 0; j < currentGroupSize && distAll; j++)
+			{ // ver cada parcela do grupo atual
+
+				c2 = cartography[subSets[currentGroup][j]].edge.vertexes[0];
+
+				double d = haversine(c1, c2);
+				if (d > dist)
+				{ // novo grupo
+					distAll = false;
+					subSets[nSubsets][0] = i;
+					sizeSubsets[nSubsets] = 1;
+					nSubsets++;
 				}
 			}
-		}
-		next = findNext(checked, sizeAll);
-		if (next >= 0)
-		{
-			memcpy(groups[group], allsubsets[next], sizesSubsets[next] );
-			sizesGroups[group] = sizesSubsets[next];
-			group++;
+			if (distAll)
+			{ // juntar ao grupo atual
+
+				subSets[currentGroup][currentGroupSize] = i;
+				sizeSubsets[currentGroup]++;
+			}
 		}
 	}
 
-
-	for(int i = 0; i<group; i++) {
-		for(int j = 0; j<sizesGroups[i]; j++) {
-			printf("%d ", groups[i][j]);
+	for(int i = 0; i<nSubsets; i++) {
+		for(int j = 0; j<sizeSubsets[i]; j++) {
+			printf("%d ", subSets[i][j]);
 		}
 		printf("\n");
 	}
+	
 }
 
 void interpreter(Cartography cartography, int n)
