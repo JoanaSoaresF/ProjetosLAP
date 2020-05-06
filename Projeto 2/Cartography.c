@@ -818,11 +818,23 @@ static double dCalc(int *g, int c, int p, Cartography cartography)
 	}
 }
 
-static void reset(int* v, int n) {
-	for(int i = 0; i<n; i++){
+static void reset(int *v, int n)
+{
+	for (int i = 0; i < n; i++)
+	{
 		v[i] = 0;
 	}
+}
 
+/**
+ * Compares two 
+ */
+int cmpint(void const *a, void const *b)
+{
+	int const *aa = (int const *)a;
+	int const *bb = (int const *)b;
+
+	return (*aa - *bb);
 }
 
 static void commandPartition(int dist, Cartography cartography, int n)
@@ -831,8 +843,8 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		return;
 
 	//form groups
-	int subSets[n][n];	// groups formed
-	reset((int*) subSets, n*n);
+	int subSets[n][n]; // groups formed
+	reset((int *)subSets, n * n);
 	int nSubsets = 1;	// number of groups formed
 	int sizeSubsets[n]; // sizes of each group
 	reset(sizeSubsets, n);
@@ -873,6 +885,11 @@ static void commandPartition(int dist, Cartography cartography, int n)
 			nSubsets++;
 			used[h] = 1;
 		}
+	}
+	
+	for (int i = 0; i < nSubsets; i++)
+	{
+		qsort(subSets[i], sizeSubsets[i], sizeof(int), cmpint);
 	}
 
 	//print groups
