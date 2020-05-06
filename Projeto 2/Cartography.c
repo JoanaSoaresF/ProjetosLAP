@@ -1,18 +1,13 @@
 /*
 largura maxima = 100 colunas
-tab = 4 espaços
+tab = 4 espacos
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 
-	Linguagens e Ambientes de Programação (B) - Projeto de 2019/20
+	Linguagens e Ambientes de Programacao (B) - Projeto de 2019/20
 
 	Cartography.c
 
-	Este ficheiro constitui apenas um ponto de partida para o
-	seu trabalho. Todo este ficheiro pode e deve ser alterado
-	à vontade, a começar por este comentário. É preciso inventar
-	muitas funções novas.
-
-COMPILAÇÃO
+COMPILACAO
 
   gcc -std=c11 -o Main Cartography.c Main.c -lm
 
@@ -22,9 +17,7 @@ IDENTIFICAÇÃO DOS AUTORES
   Aluno 2: 55754 Joana Faria
 
 COMENTÁRIO
-
- Coloque aqui a identificação do grupo, mais os seus comentários, como
- se pede no enunciado.
+Foram feitos todos os comando pedidos
 
 */
 #define USE_PTS true
@@ -202,11 +195,14 @@ static Ring readRing(FILE *f)
 	//if( n > MAX_VERTEXES )
 	//	error("Anel demasiado extenso");
 	r.nVertexes = n;
-	r.vertexes = malloc(n * sizeof(Coordinates));
+	r.vertexes = (Coordinates *)malloc(n * sizeof(Coordinates));
+
+	if (r.vertexes == NULL)
+		error("Erro: memoria nao pode ser alocada.");
 
 	for (i = 0; i < n; i++)
 	{
-		r.vertexes[i] = readCoordinates(f); // !!malloc
+		r.vertexes[i] = readCoordinates(f);
 	}
 	r.boundingBox =
 		calculateBoundingBox(r.vertexes, r.nVertexes);
@@ -261,11 +257,14 @@ static Parcel readParcel(FILE *f)
 	//	error("Poligono com demasiados buracos");
 	p.edge = readRing(f);
 	p.nHoles = n;
-	p.holes = malloc(n * sizeof(Ring));
+	p.holes = (Ring *)malloc(n * sizeof(Ring));
+
+	if (p.holes == NULL)
+		error("Erro: memoria nao pode ser alocada.");
 
 	for (i = 0; i < n; i++)
 	{
-		p.holes[i] = readRing(f); //!! malloc
+		p.holes[i] = readRing(f);
 	}
 	return p;
 }
@@ -327,12 +326,14 @@ int loadCartography(String fileName, Cartography *cartography)
 	if (f == NULL)
 		error("Impossivel abrir ficheiro");
 	int n = readInt(f);
-	//if( n > MAX_PARCELS )
-	//	error("Demasiadas parcelas no ficheiro");
 	*cartography = malloc(n * sizeof(Parcel));
+
+	if (*cartography == NULL)
+		error("Erro: memoria nao pode ser alocada.");
+
 	for (i = 0; i < n; i++)
 	{
-		(*cartography)[i] = readParcel(f); //TODO malloc
+		(*cartography)[i] = readParcel(f);
 	}
 	fclose(f);
 	return n;
@@ -530,10 +531,14 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
 }
 
 //Q
-static int numberFreguesia(int pos, Identification id, Cartography cartography, int n)
+/**
+ * Computes how many parcels in the cartography have the same id as the parcel in position pos
+*/
+static int numberFreguesia(int pos, Cartography cartography, int n)
 {
 	int i = pos;
 	int m = 0;
+	Identification id = cartography[pos].identification;
 
 	while (i < n && sameIdentification(id, cartography[i].identification, 3))
 	{
@@ -541,14 +546,17 @@ static int numberFreguesia(int pos, Identification id, Cartography cartography, 
 		i++;
 	}
 	i = pos - 1;
-	while (i > 0 && sameIdentification(id, cartography[i].identification, 3))
+	while (i >= 0 && sameIdentification(id, cartography[i].identification, 3))
 	{
 		m++;
 		i++;
 	}
 	return m;
 }
-
+/**
+ * Computes how many conselhos or distritos equals to the ones in id on the cartography.
+ * Z distings is we test conselhos or distritos
+ */
 static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int z)
 {
 	int i = 0;
@@ -569,7 +577,7 @@ static void commandParcelHowMany(int pos, Cartography cartography, int n)
 
 	Parcel p = cartography[pos];
 	Identification id = p.identification;
-	int nFreguesias = numberFreguesia(pos, id, cartography, n);
+	int nFreguesias = numberFreguesia(pos, cartography, n);
 	int nConselhos = numberConselhosDistritos(id, cartography, n, 2);
 	int nDistritos = numberConselhosDistritos(id, cartography, n, 1);
 
@@ -583,6 +591,9 @@ static void commandParcelHowMany(int pos, Cartography cartography, int n)
 }
 
 //C
+/**
+ * Tests if the string s is in na vector v with n elements
+ */
 static bool inVector(String s, StringVector v, int n)
 {
 	bool belongs = false;
@@ -596,6 +607,9 @@ static bool inVector(String s, StringVector v, int n)
 	return belongs;
 }
 
+/**
+ * Compares to strings
+ */
 int cmpstr(void const *a, void const *b)
 {
 	char const *aa = (char const *)a;
@@ -704,19 +718,17 @@ static bool belongs(int x, int *v, int n)
 	int i = 0;
 	while (!belongs && i < n)
 	{
-		printf("%d\n", i);
 		if (x == v[i])
 			belongs = true;
 		i++;
-		printf("%d\n", i);
 	}
 	return belongs;
 }
-
 /**
  * Computes all tha adjacent parcers of the parcels in int *parcels. 
  * Adds the new adjacencies to the parcels vetor.
  * The resul vetor has all the initial parcels and the all the parcels that are adjacent to those
+ * m is the number of parcels int the vector parcels
  */
 static int adjacencies(int *parcels, int m, Cartography cartography, int n)
 {
@@ -771,110 +783,39 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 	else
 		printf("%d\n", min);
 }
-
-//less carefull distance mesure
-static double coordinatesDist(Coordinates c1, Coordinates c2)
-{
-	return sqrt((c1.lat - c2.lat) * (c1.lat - c2.lat) + (c1.lon - c2.lon) * (c1.lon - c2.lon));
-}
-
-static double parcelDist(Parcel p1, Parcel p2)
-{
-	double d = INFINITY;
-	for (int i = 0; i < p1.edge.nVertexes; i++)
-	{
-		for (int j = 0; j < p2.edge.nVertexes; j++)
-			if (coordinatesDist(p1.edge.vertexes[i], p2.edge.vertexes[j]) < d)
-				d = coordinatesDist(p1.edge.vertexes[i], p2.edge.vertexes[j]);
-	}
-}
-
-//distance between two groups (vectors) of parcels
-static double groupsParcelDist(int *v1, int c1, int *v2, int c2, Cartography cartography)
-{
-	double dist = INFINITY;
-	double aux;
-	for (int i = 0; i < c1; i++)
-		for (int j = 0; j < c2; j++)
-		{
-			aux = parcelDist(cartography[v1[i]], cartography[v2[j]]);
-			if (aux < dist)
-				dist = aux;
-		}
-	return dist;
-}
-
 //T
-static bool llbelongs(int x, int **v, int *vCounter, int counter)
+
+/**
+ * Helper method to identify which parcels are not in the final parcels
+ * Parcels already added have the value 1
+ * Parcels that are not added yet have the value 0
+ */
+static int findNext(int *v, int n)
 {
-	printf("PreFor\n");
-	for (int i = 0; i < counter; i++)
+	for (int i = 0; i < n; i++)
 	{
-		printf("PreIf\n");
-		if (belongs(x, (int *)v[i], vCounter[i]))
+		if (v[i] != 1)
 		{
-			return true;
+			return i;
 		}
-		printf("PosIf\n");
 	}
-	printf("PosFor\n");
-	return false;
+	return -1;
 }
 
-static int fullAdjacencies(int *v, Cartography cartography, int n)
-{
-	int sizeAux = 1,
-		sizePrev = 0;
-	while (1)
-	{
-		sizeAux = adjacencies(v, sizeAux, cartography, n);
-		if (sizeAux == sizePrev)
-			return sizeAux;
-		sizePrev = sizeAux;
-	}
-	return sizeAux;
-}
 /**
- * aqui vamos agrupando grupos com grupos, tendo em conta a distancia entre si
- * v-> vector
- * lvc-> vector counter list
- * vc-> vector counter
+ * Calculates tha minimum distance of the parcel c to tha group g that has c elements
  */
-static void groupByDistance(int **v, int *lvc, int vc, int **lld, int *ldc, int *dc, int dist, Cartography cartography, int n)
+static double dCalc(int *g, int c, int p, Cartography cartography)
 {
-	//int llaux1[n][n];
-	//int laux1counter[n];
-	//int aux1counter = vc;
-	int llaux2[n][n];
-	int laux2counter[n];
-	int aux2counter = 0;
-	//memcpy(llaux1, v, sizeof(v));
-	//memcpy(laux1counter, lvc, sizeof(lvc));
-	for (int i = 0; i < vc; i++)
+	Coordinates cp = cartography[p].edge.vertexes[0];
+	double d = haversine(cartography[g[0]].edge.vertexes[0], cp);
+	double aux;
+	for (int i = 1; i < c; i++)
 	{
-		//TODO talvez possa tirar este if (nao apagar)
-		//if (!llbelongs(v[i][0], (int **) llaux2, laux2counter, aux2counter))
-		//{
-		bool copied = false;
-		for (int j = 0; j < aux2counter; j++)
-		{
-			if (groupsParcelDist(v[i], lvc[i], llaux2[j], laux2counter[j], cartography) <= dist)
-			{
-				memcmp(&llaux2[j][laux2counter[j]], v[i], lvc[i] * sizeof(int));
-				laux2counter[j] += lvc[i];
-				copied = true;
-			}
-		}
-		if (!copied)
-		{
-			memcpy(llaux2[aux2counter], v[i], lvc[i] * sizeof(int));
-			laux2counter[aux2counter++] = lvc[i];
-		}
-		//}
+		aux = haversine(cartography[g[i]].edge.vertexes[0], cp);
+		if (aux < d && g[i] != p)
+			d = aux;
 	}
-	memcpy(lld, llaux2, sizeof(llaux2));
-	memcpy(ldc, laux2counter, sizeof(laux2counter));
-	*dc = aux2counter;
 }
 
 static void commandPartition(int dist, Cartography cartography, int n)
@@ -882,63 +823,66 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	if (!checkArgs(dist))
 		return;
 
-	// all subsets
-	int **allsubsets = (int **)malloc(n * sizeof(int));
-	for (int i = 0; i < n; i++)
-	{
-		allsubsets[i] = (int *)malloc(n * sizeof(int));
-	}
-	int *llistCounter = malloc(n * sizeof(int));
-	for (int i = 0; i < n; i++)
-	{
-		llistCounter[i] = 0;
-	}
-	int listCounter = 0;
+	//form groups
+	int subSets[n][n];	// groups formed
+	int nSubsets = 1;	// number of groups formed
+	int sizeSubsets[n]; // sizes of each group
 
-	for (int i = 0; i < n; i++)
-	{
-		printf("PreLLbelongs\n%d\n", i);
-		if (!llbelongs(i, allsubsets, llistCounter, listCounter))
-		{
-			printf("PosLLbelongs\n");
-			allsubsets[listCounter][0] = i;
-			printf("%d\n", i);
-			llistCounter[listCounter] = fullAdjacencies(allsubsets[listCounter], cartography, n);
-			printf("%d\n", i);
-			listCounter++;
+	subSets[0][0] = 0; //start of the first group with the first parcel
+	sizeSubsets[0] = 1;
+	int used[n]; //saves the parcels that were already added
+	used[0] = 1;
+	//
+	int lastCounter = 0;
+	double d;
 
-			/*if (!llbelongs(i, (int **) allsubsets, llistCounter, listCounter))
+	for (int i = 0; i < nSubsets; i++)
+	{
+		while (lastCounter != sizeSubsets[i]) //if the groups have already achieved their max size
 		{
-			allsubsets[listCounter][llistCounter[listCounter]] = i;
-			llistCounter[i] = fullAdjacencies(allsubsets[listCounter++], cartography, n);
+			lastCounter = sizeSubsets[i]; // size of the current group
+			for (int j = 1; j < n; j++)
+			{
+				//distance between the parcel j and the current group
+				d = dCalc(subSets[i], sizeSubsets[i], j, cartography);
+				if (d < dist && used[j] != 1)
+				{ // add the parcel to the current group
+					subSets[i][sizeSubsets[i]] = j;
+					sizeSubsets[i]++;
+					used[j] = 1;
+				}
+			}
 		}
-			*/
+
+		int h = findNext(used, n); // find the next parcel to check
+		if (h > 0)
+		{ //if there is a next parcel to check create a new group with it
+
+			subSets[nSubsets][sizeSubsets[nSubsets]] = h;
+			sizeSubsets[nSubsets] = 1;
+			nSubsets++;
+			used[h] = 1;
 		}
 	}
-	/*
-	//list adjoin acording to dist
-	int finalSubsets[n][n];
-	int fSCounter = 0;
-	int lFSCounter[n];
-	while (fSCounter != listCounter)
+
+	//print groups
+	for (int i = 0; i < nSubsets; i++)
 	{
-		memcpy(allsubsets, finalSubsets, sizeof(finalSubsets));
-		memcpy(llistCounter, lFSCounter, sizeof(lFSCounter));
-		listCounter = fSCounter;
-		groupByDistance(allsubsets, llistCounter, listCounter, (int **)finalSubsets, lFSCounter, &fSCounter, dist, cartography, n);
-	}
-*/
-	//TODO fazer o print como ele quer!!!!!!!!!!!!!!!!!!!!!!
-	//TODO se quiseres esperar para eu te explicar o que fiz é mais facil do que veres tanto código de uma vez
-	//print provisorio
-	printf("printar\n");
-	for (int i = 0; i < listCounter; i++)
-	{
-		for (int j = 0; j < llistCounter[i]; j++)
-			printf("%d ", allsubsets[i][j]);
+		for (int j = 0; j < sizeSubsets[i]; j++)
+		{
+			if (j < 0 || subSets[i][j - 1] != subSets[i][j] - 1)
+			{
+				if (subSets[i][j + 1] == subSets[i][j] + 1)
+					printf("%d-", subSets[i][j]);
+
+				else
+					printf("%d ", subSets[i][j]);
+			}
+			else if (!(subSets[i][j - 1] + 1 == subSets[i][j] && subSets[i][j + 1] == subSets[i][j] + 1))
+				printf("%d ", subSets[i][j]);
+		}
 		printf("\n");
 	}
-	//free(allsubsets);
 }
 
 void interpreter(Cartography cartography, int n)
