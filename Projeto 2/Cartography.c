@@ -1004,11 +1004,11 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	}
 
 	//print groups
-	for (int i = 0; i < nSubsets; i++)
+	for (int i = 0; i < nFinalGroups; i++)
 	{
-		for (int j = 0; j < sizeSubsets[i]; j++)
+		for (int j = 0; j < sizesGroups[i]; j++)
 		{
-			printf("%d ", subSets[i][j]);
+			printf("%d ", finalGroups[i][j]);
 		}
 		printf("\n\n");
 	}
