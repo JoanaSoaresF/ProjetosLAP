@@ -756,8 +756,8 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 
 	int min = 0; // number of borders crossed
 
-	if (pos1 != pos2) 
-	{// if the parcels are the same we don't have to cross any borders
+	if (pos1 != pos2)
+	{ // if the parcels are the same we don't have to cross any borders
 		int adjsParcels[n];
 		adjsParcels[0] = pos1;
 		int sizeAux = 1, sizePrev = 0, i = 0;
@@ -821,7 +821,7 @@ static double dCalc(int *g, int c, int p, Cartography cartography)
 }
 /**
  * Puts every value of the vector v with n elements to 0
- */ 
+ */
 static void reset(int *v, int n)
 {
 	for (int i = 0; i < n; i++)
@@ -847,17 +847,18 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		return;
 
 	//form groups
-	int subSets[n][n]; // groups formed
-	reset((int *)subSets, n * n);
-	int nSubsets = 1;	// number of groups formed
+	int subSets[n][n];	// groups formed
+	int nSubsets;		// number of groups formed
 	int sizeSubsets[n]; // sizes of each group
-	reset(sizeSubsets, n);
-
-	subSets[0][0] = 0; //start of the first group with the first parcel
-	sizeSubsets[0] = 1;
-	int used[n]; //saves the parcels that were already added
+	int used[n];		//saves the parcels that were already added
 	reset(used, n);
+
+	//start of the first group with the first parcel
+	subSets[0][0] = 0;
+	nSubsets = 1;
+	sizeSubsets[0] = 1;
 	used[0] = 1;
+
 	//size of the group before the most recent changes
 	int lastCounter = 0;
 	double d;
@@ -865,8 +866,8 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	for (int i = 0; i < nSubsets; i++)
 	{
 		while (lastCounter != sizeSubsets[i]) //if the groups have already achieved their max size
-		{// the group achieves the maximum size when it's size stops changing
-			lastCounter = sizeSubsets[i]; // size of the current group previous to the changes
+		{									  // the group achieves the maximum size when it's size stops changing
+			lastCounter = sizeSubsets[i];	  // size of the current group previous to the changes
 			for (int j = 1; j < n; j++)
 			{
 				//distance between the parcel j and the current group
@@ -874,7 +875,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 				if (d <= dist && used[j] != 1)
 				{ // if the distance is lower or equals add the parcel to the current group
 					subSets[i][sizeSubsets[i]] = j;
-					sizeSubsets[i]++;
+					sizeSubsets[i] = sizeSubsets[i] + 1;
 					used[j] = 1;
 				}
 			}
@@ -884,7 +885,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 		if (h > 0)
 		{ //if there is a next parcel to check create a new group with it
 
-			subSets[nSubsets][sizeSubsets[nSubsets]] = h;
+			subSets[nSubsets][0] = h; // first parcel of the new group
 			sizeSubsets[nSubsets] = 1;
 			nSubsets++;
 			used[h] = 1;
@@ -892,7 +893,7 @@ static void commandPartition(int dist, Cartography cartography, int n)
 			lastCounter = 0;
 		}
 	}
-	
+
 	//order which group
 	for (int i = 0; i < nSubsets; i++)
 	{
@@ -904,15 +905,27 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	{
 		for (int j = 0; j < sizeSubsets[i]; j++)
 		{
-			if (j < 0 || subSets[i][j - 1] != subSets[i][j] - 1)
+			if (j - 1 < 0)
 			{
-				if (subSets[i][j + 1] != subSets[i][j] + 1)
+				if (j + 1 >= sizeSubsets[i])
+					printf("%d", subSets[i][j]);
+				
+				else if (subSets[i][j] + 1 != subSets[i][j + 1])
 					printf("%d ", subSets[i][j]);
-
+				
 				else
 					printf("%d-", subSets[i][j]);
+				
 			}
-			else if (!(subSets[i][j - 1] + 1 == subSets[i][j] && subSets[i][j + 1] == subSets[i][j] + 1))
+			else if (j + 1 == sizeSubsets[i])
+				printf("%d", subSets[i][j]);
+			
+			else if (subSets[i][j] + 1 == subSets[i][j + 1])
+			{
+				if (subSets[i][j - 1] + 1 != subSets[i][j])
+					printf("%d-", subSets[i][j]);
+			}
+			else
 				printf("%d ", subSets[i][j]);
 		}
 		printf("\n");
