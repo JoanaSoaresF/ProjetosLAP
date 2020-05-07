@@ -559,7 +559,6 @@ static int numberFreguesia(int pos, Cartography cartography, int n)
  */
 static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int z)
 {
-	int i = 0;
 	int m = 0;
 
 	for (int i = 0; i < n; i++)
@@ -818,6 +817,7 @@ static double dCalc(int *g, int c, int p, Cartography cartography)
 		if (aux < d && g[i] != p)
 			d = aux;
 	}
+	return d;
 }
 /**
  * Puts every value of the vector v with n elements to 0
@@ -848,10 +848,10 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 	//form groups
 	int subSets[n][n]; // groups formed
-	reset((int *)subSets, n * n);
+	//reset((int *)subSets, n * n);
 	int nSubsets = 1;	// number of groups formed
 	int sizeSubsets[n]; // sizes of each group
-	reset(sizeSubsets, n);
+	//reset(sizeSubsets, n);
 
 	subSets[0][0] = 0; //start of the first group with the first parcel
 	sizeSubsets[0] = 1;
