@@ -848,10 +848,10 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
 	//form groups
 	int subSets[n][n]; // groups formed
-	//reset((int *)subSets, n * n);
+	reset((int *)subSets, n * n);
 	int nSubsets = 1;	// number of groups formed
 	int sizeSubsets[n]; // sizes of each group
-	//reset(sizeSubsets, n);
+	reset(sizeSubsets, n);
 
 	subSets[0][0] = 0; //start of the first group with the first parcel
 	sizeSubsets[0] = 1;
