@@ -145,8 +145,8 @@ double haversine(Coordinates c1, Coordinates c2)
 
 Rectangle rect(Coordinates tl, Coordinates br)
 {
-	Rectangle rect = {tl, br};
-	return rect;
+	Rectangle r = {tl, br};
+	return r;
 }
 
 static void showRectangle(Rectangle r)
@@ -555,7 +555,7 @@ static int numberFreguesia(int pos, Cartography cartography, int n)
 }
 /**
  * Computes how many conselhos or distritos equals to the ones in id on the cartography.
- * Z distings is we test conselhos or distritos
+ * Z distings if we test conselhos or distritos
  */
 static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int z)
 {
@@ -608,7 +608,7 @@ static bool inVector(String s, StringVector v, int n)
 }
 
 /**
- * Compares to strings
+ * Compares two strings
  */
 int cmpstr(void const *a, void const *b)
 {
@@ -714,20 +714,21 @@ static void commandAdjacencies(int pos, Cartography cartography, int n)
  */
 static bool belongs(int x, int *v, int n)
 {
-	bool belongs = false;
+	bool belong = false;
 	int i = 0;
-	while (!belongs && i < n)
+	while (!belong && i < n)
 	{
 		if (x == v[i])
-			belongs = true;
+			belong = true;
 		i++;
 	}
-	return belongs;
+	return belong;
 }
 /**
  * Computes all tha adjacent parcers of the parcels in int *parcels. 
  * Adds the new adjacencies to the parcels vetor.
- * The resul vetor has all the initial parcels and the all the parcels that are adjacent to those
+ * The result vetor has all the initial parcels and the all the parcels that are adjacent to those
+ * No repeated parcels are added
  * m is the number of parcels int the vector parcels
  */
 static int adjacencies(int *parcels, int m, Cartography cartography, int n)
@@ -754,18 +755,18 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 	if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
 		return;
 
-	int min = 0;
+	int min = 0; // number of borders crossed
 
-	if (pos1 != pos2)
-	{
+	if (pos1 != pos2) 
+	{// if the parcels are the same we don't have to cross any borders
 		int adjsParcels[n];
 		adjsParcels[0] = pos1;
 		int sizeAux = 1, sizePrev = 0, i = 0;
-		while (!belongs(pos2, adjsParcels, sizeAux))
+		while (!belongs(pos2, adjsParcels, sizeAux)) // until we find the pos2
 		{
 			sizeAux = adjacencies(adjsParcels, sizeAux, cartography, n);
 			if (sizeAux == sizePrev)
-			{ //no changes in the adjacencies vector, therefor no path
+			{ //no changes in the adjacencies vector, therefor no more path
 				i = -1;
 				break;
 			}
@@ -775,6 +776,7 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 				i++;
 			}
 		}
+		//when we find the parcel pos 2 or find that there is no path
 		min = i;
 	}
 
@@ -817,7 +819,9 @@ static double dCalc(int *g, int c, int p, Cartography cartography)
 			d = aux;
 	}
 }
-
+/**
+ * Puts every value of the vector v with n elements to 0
+ */ 
 static void reset(int *v, int n)
 {
 	for (int i = 0; i < n; i++)
@@ -827,7 +831,7 @@ static void reset(int *v, int n)
 }
 
 /**
- * Compares two 
+ * Compares two integers
  */
 int cmpint(void const *a, void const *b)
 {
@@ -854,21 +858,21 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	int used[n]; //saves the parcels that were already added
 	reset(used, n);
 	used[0] = 1;
-	//
+	//size of the group before the most recent changes
 	int lastCounter = 0;
 	double d;
 
 	for (int i = 0; i < nSubsets; i++)
 	{
 		while (lastCounter != sizeSubsets[i]) //if the groups have already achieved their max size
-		{
-			lastCounter = sizeSubsets[i]; // size of the current group
+		{// the group achieves the maximum size when it's size stops changing
+			lastCounter = sizeSubsets[i]; // size of the current group previous to the changes
 			for (int j = 1; j < n; j++)
 			{
 				//distance between the parcel j and the current group
 				d = dCalc(subSets[i], sizeSubsets[i], j, cartography);
-				if (d < dist && used[j] != 1)
-				{ // add the parcel to the current group
+				if (d <= dist && used[j] != 1)
+				{ // if the distance is lower or equals add the parcel to the current group
 					subSets[i][sizeSubsets[i]] = j;
 					sizeSubsets[i]++;
 					used[j] = 1;
@@ -884,9 +888,12 @@ static void commandPartition(int dist, Cartography cartography, int n)
 			sizeSubsets[nSubsets] = 1;
 			nSubsets++;
 			used[h] = 1;
+			//the last size of the new group is 0, because we did not checked it yet
+			lastCounter = 0;
 		}
 	}
 	
+	//order which group
 	for (int i = 0; i < nSubsets; i++)
 	{
 		qsort(subSets[i], sizeSubsets[i], sizeof(int), cmpint);
