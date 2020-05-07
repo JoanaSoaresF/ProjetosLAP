@@ -94,7 +94,9 @@ static void showValue(int value)
 static bool sameIdentification(Identification id1, Identification id2, int z)
 {
 	if (z == 3)
-		return strcmp(id1.freguesia, id2.freguesia) == 0 && strcmp(id1.concelho, id2.concelho) == 0 && strcmp(id1.distrito, id2.distrito) == 0;
+		return strcmp(id1.freguesia, id2.freguesia) == 0 
+		&& strcmp(id1.concelho, id2.concelho) == 0 
+		&& strcmp(id1.distrito, id2.distrito) == 0;
 	else if (z == 2)
 		return strcmp(id1.concelho, id2.concelho) == 0 && strcmp(id1.distrito, id2.distrito) == 0;
 	else
@@ -183,7 +185,10 @@ static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 
 bool insideRectangle(Coordinates c, Rectangle r)
 {
-	return c.lat >= r.bottomRight.lat && c.lat <= r.topLeft.lat && c.lon >= r.topLeft.lon && c.lon <= r.bottomRight.lon;
+	return c.lat >= r.bottomRight.lat 
+			&& c.lat <= r.topLeft.lat 
+			&& c.lon >= r.topLeft.lon 
+			&& c.lon <= r.bottomRight.lon;
 }
 
 /* RING -------------------------------------- */
@@ -419,7 +424,6 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 			maxPos = i;
 		}
 		i++;
-		
 	}
 
 	i = pos - 1;
@@ -438,7 +442,6 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 			maxPos = i;
 		}
 		i--;
-		
 	}
 	showParcel(maxPos, maxParcel, maxVertexes);
 }
@@ -528,7 +531,7 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
 		}
 	}
 
-	printf("%f\n", distance);
+	printf(" %f\n", distance);
 }
 
 //Q
@@ -537,7 +540,7 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
 */
 static int numberFreguesia(int pos, Cartography cartography, int n)
 {
-	int i = pos +1;
+	int i = pos + 1;
 	int m = 1;
 	Identification id = cartography[pos].identification;
 
@@ -783,7 +786,7 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
 	if (min <= 0)
 		printf("NAO HA CAMINHO\n");
 	else
-		printf("%d\n", min);
+		printf(" %d\n", min);
 }
 //T
 
@@ -867,8 +870,8 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	for (int i = 0; i < nSubsets; i++)
 	{
 		while (lastCounter != sizeSubsets[i]) //if the groups have already achieved their max size
-		{									  // the group achieves the maximum size when it's size stops changing
-			lastCounter = sizeSubsets[i];	  // size of the current group previous to the changes
+		{// the group achieves the maximum size when it's size stops changing
+			lastCounter = sizeSubsets[i];// size of the current group previous to the changes
 			for (int j = 1; j < n; j++)
 			{
 				//distance between the parcel j and the current group
@@ -904,23 +907,23 @@ static void commandPartition(int dist, Cartography cartography, int n)
 	//print groups
 	for (int i = 0; i < nSubsets; i++)
 	{
+		printf(" ");
 		for (int j = 0; j < sizeSubsets[i]; j++)
 		{
 			if (j - 1 < 0)
 			{
 				if (j + 1 >= sizeSubsets[i])
 					printf("%d", subSets[i][j]);
-				
+
 				else if (subSets[i][j] + 1 != subSets[i][j + 1])
 					printf("%d ", subSets[i][j]);
-				
+
 				else
 					printf("%d-", subSets[i][j]);
-				
 			}
 			else if (j + 1 == sizeSubsets[i])
 				printf("%d", subSets[i][j]);
-			
+
 			else if (subSets[i][j] + 1 == subSets[i][j + 1])
 			{
 				if (subSets[i][j - 1] + 1 != subSets[i][j])
