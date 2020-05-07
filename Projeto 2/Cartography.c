@@ -400,12 +400,13 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 	Identification id = cartography[pos].identification;
 
 	int i = pos;
-	Parcel p = cartography[pos];
+	Parcel p;
 	int maxVertexes = 0;
-	int maxPos = pos;
+	int maxPos;
 	Parcel maxParcel;
 	while (i < n && sameIdentification(id, cartography[i].identification, 3))
 	{
+		p = cartography[i];
 		int m = p.edge.nVertexes;
 		for (int j = 0; j < p.nHoles; j++)
 		{
@@ -418,13 +419,13 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 			maxPos = i;
 		}
 		i++;
-		p = cartography[i];
+		
 	}
 
 	i = pos - 1;
-	p = cartography[pos];
 	while (i >= 0 && sameIdentification(id, cartography[i].identification, 3))
 	{
+		p = cartography[i];
 		int m = p.edge.nVertexes;
 		for (int j = 0; j < p.nHoles; j++)
 		{
@@ -437,7 +438,7 @@ static void commandMaximum(int pos, Cartography cartography, int n)
 			maxPos = i;
 		}
 		i--;
-		p = cartography[i];
+		
 	}
 	showParcel(maxPos, maxParcel, maxVertexes);
 }
@@ -536,8 +537,8 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
 */
 static int numberFreguesia(int pos, Cartography cartography, int n)
 {
-	int i = pos;
-	int m = 0;
+	int i = pos +1;
+	int m = 1;
 	Identification id = cartography[pos].identification;
 
 	while (i < n && sameIdentification(id, cartography[i].identification, 3))
@@ -549,7 +550,7 @@ static int numberFreguesia(int pos, Cartography cartography, int n)
 	while (i >= 0 && sameIdentification(id, cartography[i].identification, 3))
 	{
 		m++;
-		i++;
+		i--;
 	}
 	return m;
 }
