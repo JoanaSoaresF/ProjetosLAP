@@ -16,7 +16,7 @@ IDENTIFICAÇÃO DOS AUTORES
   Aluno 1: 55780 Goncalo Lourenco
   Aluno 2: 55754 Joana Faria
 
-COMENTÁRIO
+COMENTARIO
 Foram feitos todos os comando pedidos
 
 */
@@ -182,7 +182,10 @@ static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 
 bool insideRectangle(Coordinates c, Rectangle r)
 {
-  return c.lat >= r.bottomRight.lat && c.lat <= r.topLeft.lat && c.lon >= r.topLeft.lon && c.lon <= r.bottomRight.lon;
+  return c.lat >= r.bottomRight.lat 
+          && c.lat <= r.topLeft.lat 
+          && c.lon >= r.topLeft.lon 
+          && c.lon <= r.bottomRight.lon;
 }
 
 /* RING -------------------------------------- */
@@ -592,8 +595,7 @@ static int numberFreguesia(int pos, Cartography cartography, int n)
  * Computes how many conselhos or distritos equals to the ones in id on the cartography.
  * Z distings if we test conselhos(2) or distritos(3)
  */
-static int numberConselhosDistritos(Identification id, Cartography cartography, int n,
-                                    int z)
+static int numberConselhosDistritos(Identification id, Cartography cartography, int n, int z)
 {
   int m = 0;
 
@@ -675,7 +677,7 @@ static int allConselhos(StringVector concelhos, Cartography cartography, int n)
 
 static void commandConcelhos(Cartography cartography, int n)
 {
-  StringVector concelhos; 
+  StringVector concelhos;
   int m = allConselhos(concelhos, cartography, n);
   qsort(concelhos, m, MAX_STRING, cmpstr);
   showStringVector(concelhos, m);
@@ -807,8 +809,9 @@ static int adjacencies(int *parcels, int m, Cartography cartography, int n)
   {
     int p = parcels[j];
     for (int i = 0; i < n; i++)
-    {                                                                                               //the same parcel is not considered adjacent
-      if (i != p && adjacentParcels(cartography[p], cartography[i]) && !belongs(i, parcels, m + a)) // is not in the adjencencies yet
+    { //the same parcel is not considered adjacent
+      if (i != p && adjacentParcels(cartography[p], cartography[i]) 
+                  && !belongs(i, parcels, m + a)) // is not in the adjencencies yet
       {
         parcels[m + a] = i;
         a++;
@@ -923,8 +926,8 @@ int cmpint(void const *a, void const *b)
  * Saves the formed groups in subSets and the size of which group in sizeSubsets
  * Returns the number of groups formed
  * */
-static int formGroups(int n, int subSets[][n], int *sizeSubsets,
-                      Cartography cartography, double dist)
+static int formGroups(int n, int subSets[][n], int *sizeSubsets, 
+                            Cartography cartography, double dist)
 {
 
   int used[n]; // saves the parcels that were already added
@@ -944,7 +947,7 @@ static int formGroups(int n, int subSets[][n], int *sizeSubsets,
   for (int i = 0; i < nSubsets; i++)
   {
     while (lastCounter != sizeSubsets[i]) // if the groups have already achieved their max size
-    { // the group achieves the maximum size when it's size stops changing
+    {// the group achieves the maximum size when it's size stops changing
       lastCounter = sizeSubsets[i];// size of the current group previous to the changes
       for (int j = 1; j < n; j++)
       {

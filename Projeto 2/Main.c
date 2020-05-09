@@ -12,7 +12,7 @@ static int nCartography = 0;
 
 int main(void)
 {
-	nCartography = loadCartography("map.txt", &cartography);
+	nCartography = loadCartography("map1.txt", &cartography);
 	showCartography(cartography, nCartography);
 	interpreter(cartography, nCartography);
 	return 0;
