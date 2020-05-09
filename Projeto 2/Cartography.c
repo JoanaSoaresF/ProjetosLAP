@@ -151,8 +151,8 @@ Rectangle rect(Coordinates tl, Coordinates br)
 
 static void showRectangle(Rectangle r)
 {
-  printf("{%lf, %lf, %lf, %lf}", r.topLeft.lat, r.topLeft.lon, 
-                                r.bottomRight.lat, r.bottomRight.lon);
+  printf("{%lf, %lf, %lf, %lf}", r.topLeft.lat, r.topLeft.lon,
+         r.bottomRight.lat, r.bottomRight.lon);
 }
 
 static Rectangle calculateBoundingBox(Coordinates vs[], int n)
@@ -182,10 +182,7 @@ static Rectangle calculateBoundingBox(Coordinates vs[], int n)
 
 bool insideRectangle(Coordinates c, Rectangle r)
 {
-  return c.lat >= r.bottomRight.lat 
-        && c.lat <= r.topLeft.lat 
-        && c.lon >= r.topLeft.lon 
-        && c.lon <= r.bottomRight.lon;
+  return c.lat >= r.bottomRight.lat && c.lat <= r.topLeft.lat && c.lon >= r.topLeft.lon && c.lon <= r.bottomRight.lon;
 }
 
 /* RING -------------------------------------- */
@@ -392,19 +389,19 @@ static void commandListCartography(Cartography cartography, int n)
   showCartography(cartography, n);
 }
 
-// M pos
-static void commandMaximum(int pos, Cartography cartography, int n)
+/**
+ * Computes the parcel with the most vertexes in the same freguesia of the 
+ * parcel in position pos in cartography
+ * Returns the position of the parcel 
+ * and saves in maxVertexes the number os vertexes of the parcel
+ */
+static int moreVertexesParcel(int pos, Cartography cartography, int n, int *maxVertexes)
 {
-  if (!checkArgs(pos) || !checkPos(pos, n))
-    return;
-
   Identification id = cartography[pos].identification;
-
   int i = pos;
   Parcel p;
-  int maxVertexes = 0;
   int maxPos;
-  Parcel maxParcel;
+  int maxV = 0;
   //the parcels of the same freguesia are consecutive
   while (i < n && sameIdentification(id, cartography[i].identification, 3))
   {
@@ -414,10 +411,9 @@ static void commandMaximum(int pos, Cartography cartography, int n)
     {
       m += p.holes[j].nVertexes;
     }
-    if (m > maxVertexes)
+    if (m > maxV)
     {
-      maxVertexes = m;
-      maxParcel = p;
+      maxV = m;
       maxPos = i;
     }
     i++;
@@ -432,27 +428,40 @@ static void commandMaximum(int pos, Cartography cartography, int n)
     {
       m += p.holes[j].nVertexes;
     }
-    if (m > maxVertexes)
+    if (m > maxV)
     {
-      maxVertexes = m;
-      maxParcel = p;
+      maxV = m;
       maxPos = i;
     }
     i--;
   }
-  showParcel(maxPos, maxParcel, maxVertexes);
+
+  *maxVertexes = maxV;
+  return maxPos;
 }
 
-// X
-static void commandBoundaries(Cartography cartography, int m)
+// M pos
+static void commandMaximum(int pos, Cartography cartography, int n)
 {
+  if (!checkArgs(pos) || !checkPos(pos, n))
+    return;
 
-  int nPos = 0, ePos = 0, sPos = 0, wPos = 0;
+  int maxVertexes = 0;
+  int maxPos = moreVertexesParcel(pos, cartography, n, &maxVertexes);
 
-  double n = cartography[nPos].edge.boundingBox.topLeft.lat,
-         e = cartography[ePos].edge.boundingBox.bottomRight.lon,
-         s = cartography[sPos].edge.boundingBox.bottomRight.lat,
-         w = cartography[wPos].edge.boundingBox.topLeft.lon;
+  showParcel(maxPos, cartography[maxPos], maxVertexes);
+}
+
+/**
+ * Computes the extremeties of the cartography and saves the position of that parcels
+ * in nPos, ePos, sPos and wPos
+ */
+static void boundaries(Cartography cartography, int m, int *nPos, int *ePos, int *sPos, int *wPos)
+{
+  double n = cartography[*nPos].edge.boundingBox.topLeft.lat,
+         e = cartography[*ePos].edge.boundingBox.bottomRight.lon,
+         s = cartography[*sPos].edge.boundingBox.bottomRight.lat,
+         w = cartography[*wPos].edge.boundingBox.topLeft.lon;
 
   for (int i = 1; i < m; i++)
   {
@@ -460,25 +469,37 @@ static void commandBoundaries(Cartography cartography, int m)
     Rectangle auxR = cartography[i].edge.boundingBox;
     if (n < auxR.topLeft.lat)
     {
-      nPos = i;
-      n = cartography[nPos].edge.boundingBox.topLeft.lat;
+      *nPos = i;
+      n = cartography[*nPos].edge.boundingBox.topLeft.lat;
     }
     if (e < auxR.bottomRight.lon)
     {
-      ePos = i;
-      e = cartography[ePos].edge.boundingBox.bottomRight.lon;
+      *ePos = i;
+      e = cartography[*ePos].edge.boundingBox.bottomRight.lon;
     }
     if (s > auxR.bottomRight.lat)
     {
-      sPos = i;
-      s = cartography[sPos].edge.boundingBox.bottomRight.lat;
+      *sPos = i;
+      s = cartography[*sPos].edge.boundingBox.bottomRight.lat;
     }
     if (w > auxR.topLeft.lon)
     {
-      wPos = i;
-      w = cartography[wPos].edge.boundingBox.topLeft.lon;
+      *wPos = i;
+      w = cartography[*wPos].edge.boundingBox.topLeft.lon;
     }
   }
+}
+
+// X
+static void commandBoundaries(Cartography cartography, int m)
+{
+
+  int nPos = 0;
+  int ePos = 0;
+  int sPos = 0;
+  int wPos = 0;
+
+  boundaries(cartography, m, &nPos, &ePos, &sPos, &wPos);
 
   showParcel(nPos, cartography[nPos], -'N');
   showParcel(ePos, cartography[ePos], -'E');
@@ -496,18 +517,40 @@ static void commandParcelInformation(int pos, Cartography cartography, int n)
 
   showIdentification(pos, parcel.identification, 3);
   printf("\n%4s ", "");
+
   printf("%d ", parcel.edge.nVertexes);
+
   int i = 0;
   while (i < parcel.nHoles)
   {
     printf("%d ", parcel.holes[i].nVertexes);
     i++;
   }
+
   Rectangle r = parcel.edge.boundingBox;
+
   showRectangle(r);
+
   printf("\n");
 }
 
+/**
+ * Computes the minimum distance of the coordinates c to the ring edge 
+ */
+static double computeDistance(Ring edge, Coordinates c)
+{
+
+  double distance = haversine(edge.vertexes[0], c);
+  for (int i = 1; i < edge.nVertexes; i++)
+  {
+    double d = haversine(edge.vertexes[i], c);
+    {
+      if (d < distance)
+        distance = d;
+    }
+  }
+  return distance;
+}
 // V
 static void commandTrip(double lat, double lon, int pos, Cartography cartography, int n)
 {
@@ -515,15 +558,7 @@ static void commandTrip(double lat, double lon, int pos, Cartography cartography
     return;
 
   Coordinates auxC = coord(lat, lon);
-  double distance = haversine(cartography[pos].edge.vertexes[0], auxC);
-  for (int i = 1; i < cartography[pos].edge.nVertexes; i++)
-  {
-    double d = haversine(cartography[pos].edge.vertexes[i], auxC);
-    {
-      if (d < distance)
-        distance = d;
-    }
-  }
+  double distance = computeDistance(cartography[pos].edge, auxC);
 
   printf(" %f\n", distance);
 }
@@ -539,7 +574,7 @@ static int numberFreguesia(int pos, Cartography cartography, int n)
   int m = 1;
   Identification id = cartography[pos].identification;
 
-  //parcels in the same freguesia are consecutive 
+  //parcels in the same freguesia are consecutive
   while (i < n && sameIdentification(id, cartography[i].identification, 3))
   {
     m++;
@@ -618,9 +653,12 @@ int cmpstr(void const *a, void const *b)
   return strcmp(aa, bb);
 }
 
-static void commandConcelhos(Cartography cartography, int n)
+/**
+ * Saves all different conselhos in the vector conselhos
+ * Return the number of different conselhos
+ */
+static int allConselhos(StringVector concelhos, Cartography cartography, int n)
 {
-  StringVector concelhos; //[MAX_STRING_VECTOR];
   int m = 0;
   String c;
   for (int i = 0; i < n; i++)
@@ -632,15 +670,24 @@ static void commandConcelhos(Cartography cartography, int n)
       m++;
     }
   }
+  return m;
+}
 
+static void commandConcelhos(Cartography cartography, int n)
+{
+  StringVector concelhos; 
+  int m = allConselhos(concelhos, cartography, n);
   qsort(concelhos, m, MAX_STRING, cmpstr);
   showStringVector(concelhos, m);
 }
 
 // D
-static void commandDistritos(Cartography cartography, int n)
+/**
+ * Saves all different distritos in the vector distritos
+ * Return the number of diferrent distritos
+ */
+static int allDistritos(StringVector distritos, Cartography cartography, int n)
 {
-  StringVector distritos;
   int m = 0;
   String d;
   for (int i = 0; i < n; i++)
@@ -652,18 +699,27 @@ static void commandDistritos(Cartography cartography, int n)
       m++;
     }
   }
+  return m;
+}
 
+static void commandDistritos(Cartography cartography, int n)
+{
+  StringVector distritos;
+  int m = allDistritos(distritos, cartography, n);
   qsort(distritos, m, MAX_STRING, cmpstr);
   showStringVector(distritos, m);
 }
 
 // P
-static void commandParcel(double lat, double lon, Cartography cartography, int n)
-{
-  if (!checkArgs(lat) || !checkArgs(lon))
-    return;
 
-  Coordinates c = coord(lat, lon);
+/**
+ * Checks to which parcel the coordinates c belongs.
+ * Returns the position os the parcel in cartography
+ * or -1 if it doesn't belong to any parcel
+ * 
+ */
+static int belongsParcel(Coordinates c, Cartography cartography, int n)
+{
   int found = -1;
   int i = 0;
 
@@ -673,7 +729,17 @@ static void commandParcel(double lat, double lon, Cartography cartography, int n
       found = i;
     i++;
   }
-  
+  return found;
+}
+
+static void commandParcel(double lat, double lon, Cartography cartography, int n)
+{
+  if (!checkArgs(lat) || !checkArgs(lon))
+    return;
+
+  Coordinates c = coord(lat, lon);
+  int found = belongsParcel(c, cartography, n);
+
   if (found < 0)
   {
     printf("FORA DO MAPA\n");
@@ -696,8 +762,8 @@ static void commandAdjacencies(int pos, Cartography cartography, int n)
   for (int i = 0; i < n; i++)
   {
     if (i != pos && adjacentParcels(cartography[pos], cartography[i]))
-    {//the same parcel is not considered adjacent
-      
+    { //the same parcel is not considered adjacent to itself
+
       showIdentification(i, cartography[i].identification, 3);
       printf("\n");
       m = true;
@@ -706,7 +772,6 @@ static void commandAdjacencies(int pos, Cartography cartography, int n)
 
   if (!m)
     printf("NAO HA ADJACENCIAS\n");
-  
 }
 
 // F
@@ -739,12 +804,11 @@ static int adjacencies(int *parcels, int m, Cartography cartography, int n)
 
   int a = 0; // number os adjencencies added
   for (int j = 0; j < m; j++)
-  { 
+  {
     int p = parcels[j];
     for (int i = 0; i < n; i++)
-    { //the same parcel is not considered adjacent
-      if (i != p && adjacentParcels(cartography[p], cartography[i]) 
-                 && !belongs(i, parcels, m + a)) // is not in the adjencencies yet
+    {                                                                                               //the same parcel is not considered adjacent
+      if (i != p && adjacentParcels(cartography[p], cartography[i]) && !belongs(i, parcels, m + a)) // is not in the adjencencies yet
       {
         parcels[m + a] = i;
         a++;
@@ -754,16 +818,18 @@ static int adjacencies(int *parcels, int m, Cartography cartography, int n)
   return m + a;
 }
 
-static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
+/**
+ * Computes the number os borders to cross from the parcel in position pos1 until 
+ * the parcel in position pos2
+ * Returns the number of borders crossed or -1 if there is no path
+ * */
+static int bordersCrossed(int pos1, int pos2, Cartography cartography, int n)
 {
-  if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
-    return;
-
   int min = 0; // number of borders crossed
 
   if (pos1 != pos2)
-  { // if the parcels are the same we don't have to cross any borders
-    int adjsParcels[n]; // vector with all the adjacencies 
+  {                     // if the parcels are the same we don't have to cross any borders
+    int adjsParcels[n]; // vector with all the adjacencies
     adjsParcels[0] = pos1;
     int sizeAux = 1, sizePrev = 0, i = 0;
     while (!belongs(pos2, adjsParcels, sizeAux)) // until we find the pos2
@@ -784,6 +850,16 @@ static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
     min = i;
   }
 
+  return min;
+}
+
+static void commandBorders(int pos1, int pos2, Cartography cartography, int n)
+{
+  if (!checkArgs(pos1) || !checkPos(pos1, n) || !checkArgs(pos2) || !checkPos(pos2, n))
+    return;
+
+  int min = bordersCrossed(pos1, pos2, cartography, n);
+
   if (min < 0)
     printf("NAO HA CAMINHO\n");
   else
@@ -802,13 +878,12 @@ static int findNext(int *v, int n)
   {
     if (v[i] != 1)
       return i;
-
   }
   return -1;
 }
 
 /**
- * Calculates tha minimum distance of the parcel c to the group g that has c elements
+ * Calculates tha minimum distance of the parcel p to the group g that has c elements
  */
 static double dCalc(int *g, int c, int p, Cartography cartography)
 {
@@ -830,7 +905,6 @@ static void reset(int *v, int n)
 {
   for (int i = 0; i < n; i++)
     v[i] = 0;
-  
 }
 
 /**
@@ -843,17 +917,18 @@ int cmpint(void const *a, void const *b)
 
   return (*aa - *bb);
 }
-
-static void commandPartition(int dist, Cartography cartography, int n)
+/**
+ * Forms the groups that the distance of all parcels in that group is greater to 
+ * all the parcels in other group is greater then dist
+ * Saves the formed groups in subSets and the size of which group in sizeSubsets
+ * Returns the number of groups formed
+ * */
+static int formGroups(int n, int subSets[][n], int *sizeSubsets,
+                      Cartography cartography, double dist)
 {
-  if (!checkArgs(dist))
-    return;
 
-  // form groups
-  int subSets[n][n];  // groups formed
-  int nSubsets;       // number of groups formed
-  int sizeSubsets[n]; // sizes of each group
-  int used[n];        // saves the parcels that were already added
+  int used[n]; // saves the parcels that were already added
+  int nSubsets;
   reset(used, n);
 
   // start of the first group with the first parcel
@@ -868,17 +943,15 @@ static void commandPartition(int dist, Cartography cartography, int n)
 
   for (int i = 0; i < nSubsets; i++)
   {
-    while (lastCounter !=
-           sizeSubsets[i])// if the groups have already achieved their max size
-    {// the group achieves the maximum size when it's size stops changing
-      lastCounter = sizeSubsets[i]; // size of the current group previous to the changes
+    while (lastCounter != sizeSubsets[i]) // if the groups have already achieved their max size
+    { // the group achieves the maximum size when it's size stops changing
+      lastCounter = sizeSubsets[i];// size of the current group previous to the changes
       for (int j = 1; j < n; j++)
       {
         // distance between the parcel j and the current group
         d = dCalc(subSets[i], sizeSubsets[i], j, cartography);
         if (d <= dist && used[j] != 1)
-        { // if the distance is lower or equals add the
-          // parcel to the current group
+        { // if the distance is lower or equals add the parcel to the current group
           subSets[i][sizeSubsets[i]] = j;
           sizeSubsets[i] = sizeSubsets[i] + 1;
           used[j] = 1;
@@ -899,13 +972,15 @@ static void commandPartition(int dist, Cartography cartography, int n)
     }
   }
 
-  // order which group
-  for (int i = 0; i < nSubsets; i++)
-  {
-    qsort(subSets[i], sizeSubsets[i], sizeof(int), cmpint);
-  }
+  return nSubsets;
+}
 
-  // print groups
+/**
+ * Prints the groups in subsets, which in a new line
+ * Groups consecutive parcels in a group
+ * */
+static void printGroups(int n, int subSets[][n], int nSubsets, int *sizeSubsets)
+{
   for (int i = 0; i < nSubsets; i++)
   {
     printf(" ");
@@ -935,6 +1010,41 @@ static void commandPartition(int dist, Cartography cartography, int n)
     }
     printf("\n");
   }
+}
+
+static void commandPartition(int dist, Cartography cartography, int n)
+{
+  if (!checkArgs(dist))
+    return;
+
+  // form groups
+  int subSets[n][n];  // groups formed
+  int sizeSubsets[n]; // sizes of each group
+  int nSubsets = formGroups(n, subSets, sizeSubsets, cartography, dist);
+
+  // order which group
+  for (int i = 0; i < nSubsets; i++)
+  {
+    qsort(subSets[i], sizeSubsets[i], sizeof(int), cmpint);
+  }
+
+  // print groups
+  printGroups(n, subSets, nSubsets, sizeSubsets);
+}
+
+void freeProgram(Cartography *cartography, int n)
+{
+  for (int i = 0; i < n; i++)
+  {
+
+    free((*cartography)[i].edge.vertexes);
+    for (int j = 0; j < (*cartography)[i].nHoles; j++)
+    {
+      free((*cartography)[i].holes[j].vertexes);
+    }
+    free((*cartography)[i].holes);
+  }
+  free(*cartography);
 }
 
 void interpreter(Cartography cartography, int n)
@@ -1012,6 +1122,7 @@ void interpreter(Cartography cartography, int n)
 
     case 'Z':
     case 'z': // terminar
+      freeProgram(&cartography, n);
       printf("Fim de execucao! Volte sempre.\n");
       return;
 
