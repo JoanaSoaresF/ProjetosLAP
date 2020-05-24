@@ -70,8 +70,15 @@ class Actor {
 	}
 	getShot() { //?? classe com coisas sobre as quais se pode disparar?
 		if (this.isDestructible()) {
-			this.hide()
-			setTimeout(this.show.bind(this), 7000);
+			this.hide();
+			setTimeout(this.restore.bind(this), 10000);
+		}
+
+	}
+
+	restore() {
+		if(!(control.worldActive[this.x][this.y] instanceof ActiveActor)) {
+			this.show();
 		}
 
 	}
@@ -137,12 +144,18 @@ class ActiveActor extends Actor {
 				this.hide();
 				this.turn(0, left);
 				this.show();
-				setTimeout(this.fall.bind(this), 100, left);
+				this.fall(left);
+				//setTimeout(this.fall.bind(this), 100, left);
 			}
+		}
+
+		if (control.world[this.x][this.y].isCollectable()) {
+			control.world[this.x + dx][this.y + dy].collect();
+			this.goldCollected += 1;
 		}
 	}
 
-	canMove(dx, dy) {
+	canMove(dx, dy) { //FIXME corrigir saltar
 		return (this.x + dx < WORLD_WIDTH) && (this.x + dx >= 0)
 			&& control.world[this.x + dx][this.y + dy].isFree()
 			&& control.worldActive[this.x + dx][this.y + dy].isFree();
@@ -150,9 +163,10 @@ class ActiveActor extends Actor {
 	mayFall() {
 		return this.y + 1 < WORLD_HEIGHT && !(control.world[this.x][this.y + 1].isWalkable()
 			|| control.worldActive[this.x][this.y + 1].isWalkable()
-			|| control.world[this.x][this.y].isClimbable());
-	} 
-	fall(left) {
+			|| control.world[this.x][this.y].isClimbable()
+			|| control.world[this.x][this.y].isAscendable());
+	}
+	fall(left) { //BUG quedas enquanto se está a carregar nas setas
 		this.hide();
 		this.y += 1;
 		this.show();
@@ -273,11 +287,11 @@ class Hero extends ActiveActor {
 		this.name = 'hero';
 	}
 	canMove(dx, dy) {
-		let move = super.canMove(dx,dy)
-		if(move && control.worldActive[this.x+dx][this.y+dy].isEnemy()){
+		let move = super.canMove(dx, dy)
+		if (move && control.worldActive[this.x + dx][this.y + dy].isEnemy()) {
 			this.die();
 		};
-	return move;
+		return move;
 	}
 
 	animation() {
@@ -290,26 +304,50 @@ class Hero extends ActiveActor {
 
 		if (k == null) return;
 		let [dx, dy] = k;
-		this.move(dx, dy);
 
-		if (this.y + 1 >= WORLD_HEIGHT) { //fall to the void
-			this.die();
-		} else if (this.y + dy <= 0) { //level up
-			mesg('Subida de Nível!');
-			control.loadLevel(++control.currentLevel);
-		} else if (control.worldActive[this.x][this.y].isEnemy()) { //colide with robot
-			this.die();
+		if (this.y + dy < 0) { //level up
+			this.win();
+		} else {
+
+			this.move(dx, dy);
+
+			if (this.goldCollected === 1) {
+				control.showEscapeLadder();
+			}
+
+			if (this.y + 1 >= WORLD_HEIGHT) { //fall to the void
+				this.die();
+			} else if (control.worldActive[this.x][this.y].isEnemy()) { //colide with robot
+				this.die();
+			}
+
 		}
+
+
+
+	}
+
+	win() {
+		//hero.hide();
+		mesg('Subida de Nível!');
+		let level = control.currentLevel +1;
+		canvas1.width = canvas1.width;
+		setTimeout(onLoad, 5, level);
 
 	}
 	die() {
-		setTimeout(mesg, 0, "Morreu, tente novamente");
+		
+		setTimeout(mesg,10, "Morreu, tente novamente");
 		let level = control.currentLevel;
-		setTimeout(onLoad, 600, level);
+		let clear = function(){
+			canvas1.width = canvas1.width;
+			onLoad(level);
 
-
-
+		}
+		setTimeout(clear, 500, level);
+	
 	}
+
 
 	shot(direction) {
 		this.turn(8, (direction === -1));
@@ -350,6 +388,8 @@ class GameControl {
 		this.key = 0;
 		this.time = 0;
 		this.currentLevel = level;
+		this.totalGold = 0;
+		this.escapeLadder = new Array();
 		this.ctx = document.getElementById("canvas1").getContext("2d");
 		empty = new Empty();	// only one empty actor needed
 		this.world = this.createMatrix();
@@ -358,6 +398,14 @@ class GameControl {
 		this.setupEvents();
 
 
+
+	}
+	showEscapeLadder() { //FIXME heroi desaparece a subir a escada
+		for (let i = 0; i < this.escapeLadder.length; i++) {
+			let x = this.escapeLadder[i][0];
+			let y = this.escapeLadder[i][1];
+			GameFactory.actorFromCode('e', x, y);
+		}
 
 	}
 	createMatrix() { // stored by columns
@@ -378,6 +426,12 @@ class GameControl {
 			for (let y = 0; y < WORLD_HEIGHT; y++) {
 				// x/y reversed because map stored by lines
 				GameFactory.actorFromCode(map[y][x], x, y);
+				if (map[y][x] === 'o') {
+					control.totalGold++;
+				}
+				if (map[y][x] === 'E') {
+					control.escapeLadder.push([x, y]);
+				}
 			}
 	}
 	getKey() {//!NÃO MEXER
