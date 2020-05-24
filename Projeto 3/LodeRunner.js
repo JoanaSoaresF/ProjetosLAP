@@ -9,6 +9,18 @@
 
 let empty, hero, control;
 
+function sleep(milliseconds) {
+	var d1 = new Date();
+	var start = d1.getTime();
+	for (var i = 0; i < 1e7; i++) {
+		var d2 = new Date();
+		var n = d2.getTime();
+		if ((n - start) > milliseconds) {
+			break;
+		}
+	}
+}
+
 
 // ACTORS
 
@@ -20,7 +32,8 @@ class Actor {
 		this.show();
 		//
 		this.free = false;  //available to move to
-		this.colectable = false;
+		this.collectable = false;
+		this.destructible = false;
 		this.walkable = 0;
 		//
 	}
@@ -33,16 +46,23 @@ class Actor {
 		return this.free;
 	}
 
-	isColectable() {
-		return this.colectable;
+	isCollectable() {
+		return this.collectable;
 	}
 
 	isWalkable() {
-		return this.walkable === 1;
+		return this.walkable === 1 || this.walkable === 4;
 	}
 
 	isClimbable() {
 		return this.walkable === 2;
+	}
+
+	isAscendable() {
+		return this.walkable === 4;
+	}
+	isDestructible() {
+		return this.destructible;
 	}
 
 }
@@ -62,6 +82,17 @@ class PassiveActor extends Actor {
 		empty.draw(this.x, this.y);
 	}
 
+	getShot() { //?? classe com coisas sobre as quais se pode disparar?
+		if (this.isDestructible()) {
+			this.hide()
+			//TODO voltar a por tijolo
+		}
+
+	}
+	recoverShot() {
+
+	}
+
 }
 
 class ActiveActor extends Actor {
@@ -69,11 +100,11 @@ class ActiveActor extends Actor {
 	constructor(x, y, imageName) {
 		super(x, y, imageName);
 		this.time = 0;	// timestamp used in the control of the animations
-		this.goldColected = 0;
+		this.goldCollected = 0;
 		this.walkable = 1;
 		this.name;
 		this.imagesNames = ['_falls_left', '_falls_right',
-			'_on_ladder_left', '_on_ladder_right', ' on_rope_left',
+			'_on_ladder_left', '_on_ladder_right', '_on_rope_left',
 			'_on_rope_right', '_runs_left', '_runs_right',
 			'_shoots_left', '_shoots_right'];
 
@@ -86,42 +117,35 @@ class ActiveActor extends Actor {
 		control.worldActive[this.x][this.y] = empty;
 		control.world[this.x][this.y].draw(this.x, this.y);
 	}
-	animation() {
-		//TODO aspetos em comum
-	}
 
+	/**Covers the common actions of animation of the ative actors*/
 	move(dx, dy) {
 		if (this.canMove(dx, dy)) {
-			if (control.world[this.x + dx][this.y + dy].isColectable()) {
-				control.world[this.x + dx][this.y + dy].colect();
-				this.goldColected += 1;
+			if (control.world[this.x + dx][this.y + dy].isCollectable()) {
+				control.world[this.x + dx][this.y + dy].collect();
+				this.goldCollected += 1;
 			}
 			this.hide();
 			this.x += dx;
 			this.y += dy;
-			let left = dx < 0;
+			let left = (dx === 0) ? this.imageName.includes('left') : dx < 0;
 
-
-			if (left) {
-				this.turn(6);
-			} else {
-				this.turn(7);
-			}
+			this.turn(6, left);
 			this.show();
 
-
-			//
 			if (this.mayFall()) {
-
-				this.fall();
+				this.hide();
+				this.turn(0, left);
+				this.show();
+				this.fall(left);
 			}
 		}
 	}
 
-
-
-	canMove(dx, dy) {
-		return control.world[this.x + dx][this.y + dy].isFree()  //
+	canMove(dx, dy) { 
+		return (this.x + dx < WORLD_WIDTH) && (this.x + dx >= 0)
+			/*&& (this.y + dy < WORLD_HEIGHT) && (this.y + dy > 0)*/ //?? morrer e ganhar
+			&& control.world[this.x + dx][this.y + dy].isFree()  //
 			&& control.worldActive[this.x + dx][this.y + dy].isFree();
 	}
 	mayFall() {
@@ -129,56 +153,50 @@ class ActiveActor extends Actor {
 			|| control.worldActive[this.x][this.y + 1].isWalkable()
 			|| control.world[this.x][this.y].isClimbable());
 	}
-	fall() {
+	fall(left) {
+		//FIXME queda lenta
 		this.hide();
 		this.y += 1;
-		if (this.imageName.includes('left'))
-			this.turn(0);
-		else
-			this.turn(1);
-
 		this.show();
 
+		if(this.y + 1 >= WORLD_HEIGHT) {
+			//TODO morrer
+			setTimeout(mesg,2000,"Morreu");
 
-		for (let i = 0; i < 1000000000; i++) {
-			;
-		}
-		this.show();
-		if (this.mayFall()) { //TODO adicionar condição do sair da tela
-			for (let i = 0; i < 1000000000; i++) {
-				;
-			}
-			this.fall();
+		} else if (this.mayFall()){
+			this.fall(left);
+
 		} else {
-			this.hide();
-			if (this.imageName.includes('left'))
-				this.turn(6);
-			else
-				this.turn(7);
-
+			this.turn(6, left);
 			this.show();
-
 		}
 
 
 	}
-	turn(pos) {
-		this.imageName = this.name + this.imagesNames[pos];
+	turn(pos, isLeftDirection) {
+		let direction = isLeftDirection ? 0 : 1;
+
+		if (control.world[this.x][this.y].isAscendable()) {
+			this.imageName = this.name + this.imagesNames[2 + direction];
+
+		} else if (control.world[this.x][this.y].isClimbable()) {
+			this.imageName = this.name + this.imagesNames[4 + direction];
+		} else {
+			this.imageName = this.name + this.imagesNames[pos + direction];
+		}
 		this.draw(this.x, this.y)
 	}
 }
 
-class ColectableActor extends PassiveActor {
+class CollectableActor extends PassiveActor {
 	constructor(x, y, imageName) {
 		super(x, y, imageName);
 		this.free = true;
-		this.colectable = true;
+		this.collectable = true;
 	}
 
-	colect() {
-		//TODO ver se ja foi coletado
+	collect() {
 		this.hide();
-		//this = empty;
 	}
 }
 
@@ -186,6 +204,7 @@ class Brick extends PassiveActor {
 	constructor(x, y) {
 		super(x, y, "brick");
 		this.walkable = 1;
+		this.destructible = true;
 	}
 }
 
@@ -205,7 +224,7 @@ class Empty extends PassiveActor {
 	hide() { } //??FIX
 }
 
-class Gold extends ColectableActor {
+class Gold extends CollectableActor {
 	constructor(x, y) {
 		super(x, y, "gold");
 
@@ -222,7 +241,7 @@ class Ladder extends PassiveActor {
 		super(x, y, "ladder");
 		this.visible = false;
 		this.free = true;
-		this.walkable = 1;
+		this.walkable = 4;
 
 	}
 	show() {
@@ -260,19 +279,27 @@ class Hero extends ActiveActor {
 		this.name = 'hero';
 	}
 	animation() {
-		var k = control.getKey();
-		if (k == ' ') { alert('SHOOT'); return; }
+		var k = control.getKey(); //FIXME como saber direção do disparo?
+		if (k == ' ') { this.shot(-1); return; }
 		if (k == null) return;
 		let [dx, dy] = k;
 		this.move(dx, dy);
+		if(this.y+dy <=0) { //subimos as escadas para sair
+			//TODO ganhar jogo
+
+		}
 
 	}
 
-	//TODO: apanhar ouro
-	collect() {
-		this.goldColected += 1;
+	shot(direction) {
+		this.turn(8, (direction === -1));
+		control.world[this.x + direction][this.y + 1].getShot();
+
 	}
-	//TODO: disparar
+	collect() { //?? aqui ou no ator ativo?
+		this.goldCollected += 1;
+	}
+
 }
 
 class Robot extends ActiveActor {
@@ -280,7 +307,13 @@ class Robot extends ActiveActor {
 		super(x, y, "robot_runs_right");
 		this.dx = 1;
 		this.dy = 0;
+
 		this.name = 'robot';
+
+	}
+	animation() {
+		//TODO como gerar movimento do robot
+		//this.move(dx, dy);
 
 	}
 }
@@ -290,7 +323,7 @@ class Robot extends ActiveActor {
 // GAME CONTROL
 
 class GameControl {
-	constructor() {
+	constructor() { 
 		control = this;
 		this.key = 0;
 		this.time = 0;
@@ -300,6 +333,9 @@ class GameControl {
 		this.worldActive = this.createMatrix();
 		this.loadLevel(1);
 		this.setupEvents();
+
+
+
 	}
 	createMatrix() { // stored by columns
 		let matrix = new Array(WORLD_WIDTH);
@@ -321,7 +357,7 @@ class GameControl {
 				GameFactory.actorFromCode(map[y][x], x, y);
 			}
 	}
-	getKey() {
+	getKey() {//!NÃO MEXER
 		let k = control.key;
 		control.key = 0;
 		switch (k) {
@@ -334,12 +370,12 @@ class GameControl {
 			// http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
 		};
 	}
-	setupEvents() {
+	setupEvents() {//!NÃO MEXER
 		addEventListener("keydown", this.keyDownEvent, false);
 		addEventListener("keyup", this.keyUpEvent, false);
 		setInterval(this.animationEvent, 1000 / ANIMATION_EVENTS_PER_SECOND);
 	}
-	animationEvent() {
+	animationEvent() {//!NÃO MEXER
 		control.time++;
 		for (let x = 0; x < WORLD_WIDTH; x++)
 			for (let y = 0; y < WORLD_HEIGHT; y++) {
@@ -350,10 +386,10 @@ class GameControl {
 				}
 			}
 	}
-	keyDownEvent(k) {
+	keyDownEvent(k) {//!NÃO MEXER
 		control.key = k.keyCode;
 	}
-	keyUpEvent(k) {
+	keyUpEvent(k) { //!NÃO MEXER
 	}
 }
 
@@ -366,7 +402,7 @@ function onLoad() {
 }
 
 function b1() { mesg("button1") } //TODO: botão reset
-function b2() { mesg("button2") } //TODO: infromações sobre o jogo
+function b2() { mesg("button2") } //TODO: informações sobre o jogo
 
 
 
