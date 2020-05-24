@@ -35,6 +35,7 @@ class Actor {
 		this.collectable = false;
 		this.destructible = false;
 		this.walkable = 0;
+		this.evil = false;
 		//
 	}
 	draw(x, y) {
@@ -64,6 +65,16 @@ class Actor {
 	isDestructible() {
 		return this.destructible;
 	}
+	isEnemy() {
+		return this.evil;
+	}
+	getShot() { //?? classe com coisas sobre as quais se pode disparar?
+		if (this.isDestructible()) {
+			this.hide()
+			setTimeout(this.show.bind(this), 7000);
+		}
+
+	}
 
 }
 
@@ -80,17 +91,6 @@ class PassiveActor extends Actor {
 	hide() {
 		control.world[this.x][this.y] = empty;
 		empty.draw(this.x, this.y);
-	}
-
-	getShot() { //?? classe com coisas sobre as quais se pode disparar?
-		if (this.isDestructible()) {
-			this.hide()
-			//TODO voltar a por tijolo
-		}
-
-	}
-	recoverShot() {
-
 	}
 
 }
@@ -137,34 +137,28 @@ class ActiveActor extends Actor {
 				this.hide();
 				this.turn(0, left);
 				this.show();
-				this.fall(left);
+				setTimeout(this.fall.bind(this), 100, left);
 			}
 		}
 	}
 
-	canMove(dx, dy) { 
+	canMove(dx, dy) {
 		return (this.x + dx < WORLD_WIDTH) && (this.x + dx >= 0)
-			/*&& (this.y + dy < WORLD_HEIGHT) && (this.y + dy > 0)*/ //?? morrer e ganhar
-			&& control.world[this.x + dx][this.y + dy].isFree()  //
+			&& control.world[this.x + dx][this.y + dy].isFree()
 			&& control.worldActive[this.x + dx][this.y + dy].isFree();
 	}
 	mayFall() {
-		return !(control.world[this.x][this.y + 1].isWalkable()
+		return this.y + 1 < WORLD_HEIGHT && !(control.world[this.x][this.y + 1].isWalkable()
 			|| control.worldActive[this.x][this.y + 1].isWalkable()
 			|| control.world[this.x][this.y].isClimbable());
-	}
+	} 
 	fall(left) {
-		//FIXME queda lenta
 		this.hide();
 		this.y += 1;
 		this.show();
 
-		if(this.y + 1 >= WORLD_HEIGHT) {
-			//TODO morrer
-			setTimeout(mesg,2000,"Morreu");
-
-		} else if (this.mayFall()){
-			this.fall(left);
+		if (this.mayFall()) {
+			setTimeout(this.fall.bind(this), 100, left);
 
 		} else {
 			this.turn(6, left);
@@ -278,16 +272,42 @@ class Hero extends ActiveActor {
 		super(x, y, "hero_runs_left");
 		this.name = 'hero';
 	}
+	canMove(dx, dy) {
+		let move = super.canMove(dx,dy)
+		if(move && control.worldActive[this.x+dx][this.y+dy].isEnemy()){
+			this.die();
+		};
+	return move;
+	}
+
 	animation() {
-		var k = control.getKey(); //FIXME como saber direção do disparo?
-		if (k == ' ') { this.shot(-1); return; }
+		var k = control.getKey();
+
+		if (k == ' ') {
+			let direction = this.imageName.includes('left') ? -1 : 1
+			this.shot(direction); return;
+		}
+
 		if (k == null) return;
 		let [dx, dy] = k;
 		this.move(dx, dy);
-		if(this.y+dy <=0) { //subimos as escadas para sair
-			//TODO ganhar jogo
 
+		if (this.y + 1 >= WORLD_HEIGHT) { //fall to the void
+			this.die();
+		} else if (this.y + dy <= 0) { //level up
+			mesg('Subida de Nível!');
+			control.loadLevel(++control.currentLevel);
+		} else if (control.worldActive[this.x][this.y].isEnemy()) { //colide with robot
+			this.die();
 		}
+
+	}
+	die() {
+		setTimeout(mesg, 0, "Morreu, tente novamente");
+		let level = control.currentLevel;
+		setTimeout(onLoad, 600, level);
+
+
 
 	}
 
@@ -307,6 +327,8 @@ class Robot extends ActiveActor {
 		super(x, y, "robot_runs_right");
 		this.dx = 1;
 		this.dy = 0;
+		this.evil = true;
+		this.free = true; //the hero and the robot have to colide
 
 		this.name = 'robot';
 
@@ -323,15 +345,16 @@ class Robot extends ActiveActor {
 // GAME CONTROL
 
 class GameControl {
-	constructor() { 
+	constructor(level) {
 		control = this;
 		this.key = 0;
 		this.time = 0;
+		this.currentLevel = level;
 		this.ctx = document.getElementById("canvas1").getContext("2d");
 		empty = new Empty();	// only one empty actor needed
 		this.world = this.createMatrix();
 		this.worldActive = this.createMatrix();
-		this.loadLevel(1);
+		this.loadLevel(this.currentLevel);
 		this.setupEvents();
 
 
@@ -396,9 +419,9 @@ class GameControl {
 
 // HTML FORM
 
-function onLoad() {
+function onLoad(level) {
 	// Asynchronously load the images an then run the game
-	GameImages.loadAll(function () { new GameControl(); });
+	GameImages.loadAll(function () { new GameControl(level); });
 }
 
 function b1() { mesg("button1") } //TODO: botão reset
