@@ -8,19 +8,10 @@
 // tente não definir mais nenhuma variável global
 
 let empty, hero, control;
-
-function sleep(milliseconds) {
-	var d1 = new Date();
-	var start = d1.getTime();
-	for (var i = 0; i < 1e7; i++) {
-		var d2 = new Date();
-		var n = d2.getTime();
-		if ((n - start) > milliseconds) {
-			break;
-		}
-	}
-}
-
+const ASCENDABLE = 4;
+const FLOOR = 1;
+const CLIMBABLE = 2;
+const VOID = 0;
 
 // ACTORS
 
@@ -32,9 +23,8 @@ class Actor {
 		this.show();
 		//
 		this.free = false;  //available to move to
-		this.collectable = false;
 		this.destructible = false;
-		this.walkable = 0;
+		this.walkableType = VOID;
 		this.evil = false;
 		//
 	}
@@ -47,20 +37,16 @@ class Actor {
 		return this.free;
 	}
 
-	isCollectable() {
-		return this.collectable;
-	}
-
 	isWalkable() {
-		return this.walkable === 1 || this.walkable === 4;
+		return this.walkableType === FLOOR || this.walkableType === ASCENDABLE;
 	}
 
 	isClimbable() {
-		return this.walkable === 2;
+		return this.walkableType === CLIMBABLE;
 	}
 
 	isAscendable() {
-		return this.walkable === 4;
+		return this.walkableType === ASCENDABLE;
 	}
 	isDestructible() {
 		return this.destructible;
@@ -68,26 +54,14 @@ class Actor {
 	isEnemy() {
 		return this.evil;
 	}
-	getShot() { //?? classe com coisas sobre as quais se pode disparar?
-		if (this.isDestructible()) {
-			this.hide();
-			setTimeout(this.restore.bind(this), 10000);
-		}
 
-	}
-
-	restore() {
-		if(!(control.worldActive[this.x][this.y] instanceof ActiveActor)) {
-			this.show();
-		}
-
-	}
 
 }
 
 class PassiveActor extends Actor {
 	constructor(x, y, imageName) {
 		super(x, y, imageName);
+		this.trap = false;
 	}
 
 
@@ -100,6 +74,28 @@ class PassiveActor extends Actor {
 		empty.draw(this.x, this.y);
 	}
 
+	getShot() { //in case new personas added can be shotted
+		if (this.isDestructible()) { //TODO não destrói se houver outro por cima
+			this.hide();
+			this.trap = true;
+			setTimeout(this.restore.bind(this), 10000);
+		}
+	}
+	isTrap() {
+		return this.trap;
+	}
+
+	restore() {
+		if ((control.worldActive[this.x][this.y] instanceof ActiveActor)) {
+			control.worldActive[this.x][this.y].jumpBrick();
+		}
+		this.trap = false;
+		this.show();
+	}
+
+
+
+
 }
 
 class ActiveActor extends Actor {
@@ -108,14 +104,15 @@ class ActiveActor extends Actor {
 		super(x, y, imageName);
 		this.time = 0;	// timestamp used in the control of the animations
 		this.goldCollected = 0;
-		this.walkable = 1;
+		this.walkableType = FLOOR;
 		this.name;
 		this.imagesNames = ['_falls_left', '_falls_right',
 			'_on_ladder_left', '_on_ladder_right', '_on_rope_left',
 			'_on_rope_right', '_runs_left', '_runs_right',
 			'_shoots_left', '_shoots_right'];
-
 	}
+
+
 	show() {
 		control.worldActive[this.x][this.y] = this;
 		this.draw(this.x, this.y);
@@ -124,14 +121,39 @@ class ActiveActor extends Actor {
 		control.worldActive[this.x][this.y] = empty;
 		control.world[this.x][this.y].draw(this.x, this.y);
 	}
+	animation() {
+		let direction = this.imageName.includes('left');
 
-	/**Covers the common actions of animation of the ative actors*/
+		if (control.world[this.x][this.y] instanceof CollectableActor) {
+			control.world[this.x][this.y].collect();
+			this.show();
+			this.collectGold();
+		}
+
+		if (this.mayFall()) {
+			this.hide();
+			this.turn(0, direction);
+			this.show();
+			this.fall(direction);
+		}
+	}
+
+	evalCollision(dx, dy) {
+		//TODO condição de sair para fora da tela
+		if (!(control.worldActive[this.x + dx][this.y + dy] instanceof Empty)
+			&& ((!this.isEnemy()
+				&& control.worldActive[this.x + dx][this.y + dy].isEnemy()) //hero colide robot
+				|| (this.isEnemy()
+					&& !control.worldActive[this.x + dx][this.y + dy].isEnemy()))) { //robot colide hero
+
+			hero.die();
+		}
+
+	}
+	//Covers the common actions of animation of the ative actors
 	move(dx, dy) {
+		this.evalCollision(dx, dy);
 		if (this.canMove(dx, dy)) {
-			if (control.world[this.x + dx][this.y + dy].isCollectable()) {
-				control.world[this.x + dx][this.y + dy].collect();
-				this.goldCollected += 1;
-			}
 			this.hide();
 			this.x += dx;
 			this.y += dy;
@@ -139,26 +161,20 @@ class ActiveActor extends Actor {
 
 			this.turn(6, left);
 			this.show();
-
-			if (this.mayFall()) {
-				this.hide();
-				this.turn(0, left);
-				this.show();
-				this.fall(left);
-				//setTimeout(this.fall.bind(this), 100, left);
-			}
 		}
 
-		if (control.world[this.x][this.y].isCollectable()) {
-			control.world[this.x + dx][this.y + dy].collect();
-			this.goldCollected += 1;
-		}
+	}
+	collectGold() {
+		this.goldCollected += 1;
 	}
 
-	canMove(dx, dy) { //FIXME corrigir saltar
-		return (this.x + dx < WORLD_WIDTH) && (this.x + dx >= 0)
-			&& control.world[this.x + dx][this.y + dy].isFree()
-			&& control.worldActive[this.x + dx][this.y + dy].isFree();
+	canMove(dx, dy) {
+		return (this.x + dx < WORLD_WIDTH) && (this.x + dx >= 0) //in the canvas
+			&& control.world[this.x + dx][this.y + dy].isFree() //the new position is free
+			&& (dy >= 0 || control.world[this.x][this.y].isAscendable()) // can go up only when on a ladder
+			&& (control.world[this.x][this.y].isClimbable() // can't move during a fall
+				|| control.world[this.x][this.y + 1].isWalkable()
+				|| control.worldActive[this.x][this.y + 1].isWalkable());
 	}
 	mayFall() {
 		return this.y + 1 < WORLD_HEIGHT && !(control.world[this.x][this.y + 1].isWalkable()
@@ -166,27 +182,21 @@ class ActiveActor extends Actor {
 			|| control.world[this.x][this.y].isClimbable()
 			|| control.world[this.x][this.y].isAscendable());
 	}
-	fall(left) { //BUG quedas enquanto se está a carregar nas setas
+	fall(left) {
 		this.hide();
 		this.y += 1;
 		this.show();
 
-		if (this.mayFall()) {
-			setTimeout(this.fall.bind(this), 100, left);
-
-		} else {
+		if (!this.mayFall()) {
 			this.turn(6, left);
 			this.show();
 		}
-
-
 	}
 	turn(pos, isLeftDirection) {
 		let direction = isLeftDirection ? 0 : 1;
 
 		if (control.world[this.x][this.y].isAscendable()) {
 			this.imageName = this.name + this.imagesNames[2 + direction];
-
 		} else if (control.world[this.x][this.y].isClimbable()) {
 			this.imageName = this.name + this.imagesNames[4 + direction];
 		} else {
@@ -194,13 +204,16 @@ class ActiveActor extends Actor {
 		}
 		this.draw(this.x, this.y)
 	}
+	jumpBrick() {
+		this.y -= 1;
+		this.show();
+	}
 }
 
 class CollectableActor extends PassiveActor {
 	constructor(x, y, imageName) {
 		super(x, y, imageName);
 		this.free = true;
-		this.collectable = true;
 	}
 
 	collect() {
@@ -208,10 +221,67 @@ class CollectableActor extends PassiveActor {
 	}
 }
 
+class EvilActiveActor extends ActiveActor {
+	constructor(x, y, imageName) {
+		super(x, y, imageName);
+		this.dx = 1;
+		this.dy = 0;
+		this.evil = true;
+		this.free = true; //the hero and the robot have to colide
+		this.hX = 0;
+		this.hY = 0;
+		this.trapped = false;
+	}
+
+	findHero() {
+		/*	for (let yHPos = 0; yHPos < WORLD_HEIGHT; yHPos++) {
+				for (let xHPos = 0; xHPos < WORLD_WIDTH; xHPos++) {
+					if (control.worldActive[xHPos][yHPos] instanceof ActiveActor)
+						if (!control.worldActive[xHPos][yHPos].isEnemy()) {
+							this.hX = control.worldActive[xHPos][yHPos].x;
+							this.hY = control.worldActive[xHPos][yHPos].y;
+						}
+				}
+			}*/
+		this.hX = hero.x;
+		this.hY = hero.y;
+	}
+
+	collectGold() {
+		if (this.goldCollected < 1) {
+			super.collectGold();
+		}
+
+	}
+	canMove(dx, dy) {
+		return super.canMove(dx, dy)
+			&& !(control.worldActive[this.x + dx][this.y + dy].isEnemy());
+
+	}
+	animation() {
+		//TODO cair no buraco sem cair
+		//TODO largar ouro ao cair no buraco
+		if (!control.world[this.x][this.y].isTrap()) {
+			if (!super.animation()) {
+				this.findHero();
+				if (this.hY < this.y && this.canMove(0, -1))
+					this.move(0, -1);
+				else if (this.hY > this.y && this.canMove(0, 1))
+					this.move(0, 1);
+				else if (this.hX < this.x && this.canMove(-1, 0))
+					this.move(-1, 0);
+				else if (this.canMove(1, 0))
+					this.move(1, 0);
+			}
+		}
+	}
+
+}
+
 class Brick extends PassiveActor {
 	constructor(x, y) {
 		super(x, y, "brick");
-		this.walkable = 1;
+		this.walkableType = FLOOR;
 		this.destructible = true;
 	}
 }
@@ -227,6 +297,7 @@ class Empty extends PassiveActor {
 	constructor() {
 		super(-1, -1, "empty");
 		this.free = true;
+
 	}
 	show() { } //??FIX
 	hide() { } //??FIX
@@ -244,24 +315,15 @@ class Invalid extends PassiveActor {
 	constructor(x, y) { super(x, y, "invalid"); }
 }
 
+
 class Ladder extends PassiveActor {
 	constructor(x, y) {
-		super(x, y, "ladder");
-		this.visible = false;
+		super(x, y, "empty");
 		this.free = true;
-		this.walkable = 4;
-
-	}
-	show() {
-		if (this.visible)
-			super.show();
-	}
-	hide() {
-		if (this.visible)
-			super.hide();
+		this.walkableType = ASCENDABLE;
 	}
 	makeVisible() {
-		this.visible = true;
+		this.imageName = "ladder";
 		this.show();
 	}
 }
@@ -270,14 +332,14 @@ class Rope extends PassiveActor {
 	constructor(x, y) {
 		super(x, y, "rope");
 		this.free = true;
-		this.walkable = 2;
+		this.walkableType = CLIMBABLE;
 	}
 }
 
 class Stone extends PassiveActor {
 	constructor(x, y) {
 		super(x, y, "stone");
-		this.walkable = 1;
+		this.walkableType = FLOOR;
 	}
 }
 
@@ -286,17 +348,27 @@ class Hero extends ActiveActor {
 		super(x, y, "hero_runs_left");
 		this.name = 'hero';
 	}
-	canMove(dx, dy) {
-		let move = super.canMove(dx, dy)
-		if (move && control.worldActive[this.x + dx][this.y + dy].isEnemy()) {
-			this.die();
-		};
-		return move;
+
+	isAllGoldCollected() {
+		return this.goldCollected >= 1;
+	}
+
+	collectGold() {
+		super.collectGold();
+		if (this.isAllGoldCollected()) { //all gold collected
+			control.showEscapeLadder();
+		}
 	}
 
 	animation() {
-		var k = control.getKey();
+		super.animation();
+		if (this.y + 1 >= WORLD_HEIGHT) { //fall to the void
+			this.die();
+		} else if (control.worldActive[this.x][this.y].isEnemy()) { //colide with robot
+			this.die();
+		}
 
+		var k = control.getKey();
 		if (k == ' ') {
 			let direction = this.imageName.includes('left') ? -1 : 1
 			this.shot(direction); return;
@@ -305,77 +377,73 @@ class Hero extends ActiveActor {
 		if (k == null) return;
 		let [dx, dy] = k;
 
-		if (this.y + dy < 0) { //level up
+		if (this.isAllGoldCollected() && this.y + dy < 0) { //level up
 			this.win();
 		} else {
 
 			this.move(dx, dy);
 
-			if (this.goldCollected === 1) {
-				control.showEscapeLadder();
-			}
-
-			if (this.y + 1 >= WORLD_HEIGHT) { //fall to the void
-				this.die();
-			} else if (control.worldActive[this.x][this.y].isEnemy()) { //colide with robot
-				this.die();
-			}
-
 		}
-
-
-
 	}
 
 	win() {
 		//hero.hide();
 		mesg('Subida de Nível!');
-		let level = control.currentLevel +1;
+		let level = control.currentLevel + 1;
 		canvas1.width = canvas1.width;
 		setTimeout(onLoad, 5, level);
 
 	}
 	die() {
-		
-		setTimeout(mesg,10, "Morreu, tente novamente");
+
+		setTimeout(mesg, 10, "Morreu, tente novamente");
 		let level = control.currentLevel;
-		let clear = function(){
+		let clear = function () {
 			canvas1.width = canvas1.width;
 			onLoad(level);
 
 		}
 		setTimeout(clear, 500, level);
-	
+
 	}
 
 
 	shot(direction) {
-		this.turn(8, (direction === -1));
-		control.world[this.x + direction][this.y + 1].getShot();
+		if (control.world[this.x][this.y].isFree()
+			&& control.world[this.x][this.y + 1].isWalkable()) {
+			this.turn(8, (direction === -1));
+			control.world[this.x + direction][this.y + 1].getShot();
+			//TODO recuo
+			if (control.world[this.x - direction][this.y].isFree())
+				this.move(-direction, 0);
 
-	}
-	collect() { //?? aqui ou no ator ativo?
-		this.goldCollected += 1;
+		}
+
+
+
+
 	}
 
 }
 
-class Robot extends ActiveActor {
+
+class Robot extends EvilActiveActor {
 	constructor(x, y) {
 		super(x, y, "robot_runs_right");
-		this.dx = 1;
-		this.dy = 0;
-		this.evil = true;
-		this.free = true; //the hero and the robot have to colide
-
+		this.counter = 0;
 		this.name = 'robot';
 
 	}
 	animation() {
 		//TODO como gerar movimento do robot
 		//this.move(dx, dy);
+		this.counter++;
+		if (control.time % 8 === 0) //?? usar o time
+			super.animation();
 
 	}
+
+
 }
 
 
@@ -400,7 +468,7 @@ class GameControl {
 
 
 	}
-	showEscapeLadder() { //FIXME heroi desaparece a subir a escada
+	showEscapeLadder() {
 		for (let i = 0; i < this.escapeLadder.length; i++) {
 			let x = this.escapeLadder[i][0];
 			let y = this.escapeLadder[i][1];
