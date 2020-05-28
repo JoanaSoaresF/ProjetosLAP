@@ -7,7 +7,7 @@
 
 // tente não definir mais nenhuma variável global
 let animation;
-let empty, hero, control;
+let empty, hero, control, gameHistory;
 const ASCENDABLE = 4;
 const FLOOR = 1;
 const CLIMBABLE = 2;
@@ -26,7 +26,7 @@ class Actor {
 		this.walkableType = VOID;
 		this.evil = false;
 		//
-		this.gameNumber = control.gameNumber;
+		//this.gameNumber = control.gameNumber;
 	}
 	draw(x, y) {
 		control.ctx.drawImage(GameImages[this.imageName],
@@ -100,33 +100,34 @@ class PassiveActorShootable extends PassiveActor {
 	getShot() { //in case new personas added can be shotted
 		if (control.world[this.x][this.y - 1].isFree()) {
 			this.hide();
-			control.traps.push([this.x, this.y, 100]);
+			gameHistory.traps.push([this.x, this.y, 100]);
 		}
 	}
 	restore() {
 
 		if ((control.worldActive[this.x][this.y] instanceof ActiveActor)) {
 			control.worldActive[this.x][this.y].jumpBrick();
+		} else {
+			gameHistory.traps.shift();
 		}
 		this.free = false;
 		this.timeToRestore = 250;
 		this.walkableType = FLOOR;
 		this.imageName = "brick";
 		this.show();
-		control.traps.shift();
 	}
 
 	animation() {
-		for (let i = 0; i < control.traps.length; i++) {
-			let time = control.traps[i][2];
-			let x = control.traps[i][0];
-			let y = control.traps[i][1];
+		for (let i = 0; i < gameHistory.traps.length; i++) {
+			let time = gameHistory.traps[i][2];
+			let x = gameHistory.traps[i][0];
+			let y = gameHistory.traps[i][1];
 
 			if (time <= 0) {
 				control.world[x][y].restore();
 			}
 			if (this.x === x && this.y === y) {
-				control.traps[i][2] -= 1;
+				gameHistory.traps[i][2] -= 1;
 
 			}
 
@@ -224,7 +225,7 @@ class ActiveActor extends Actor {
 	canMove(dx, dy) {
 		return (this.x + dx < WORLD_WIDTH) && (this.x + dx >= 0
 			&& this.y + dy < WORLD_HEIGHT) //in the canvas
-			&& control.world[this.x + dx][this.y + dy].isFree() //the new position is free
+			&& (this.y + dy >= 0 && control.world[this.x + dx][this.y + dy].isFree()) //the new position is free
 			&& (dy >= 0 || control.world[this.x][this.y].isAscendable()) // can go up only when on a ladder
 			&& (control.world[this.x][this.y].isClimbable() // can't move during a fall
 				|| (this.y + 1 === WORLD_HEIGHT) // can walk on the borders	
@@ -275,6 +276,7 @@ class ActiveActor extends Actor {
 		if (control.worldActive[this.x][this.y - 1] instanceof Empty
 			&& control.world[this.x][this.y] instanceof PassiveActorShootable) {
 			this.y -= 1;
+			control.worldActive[this.x][this.y + 1] = empty;
 			this.show();
 		} else { //robot dies because it can't get out and reborns after 5 units of time
 			control.world[this.x][this.y].timeToRestore = 5;
@@ -328,14 +330,14 @@ class EvilActiveActor extends ActiveActor {
 	}
 	isTrapped() {
 		let found = false;
-		for (let i = 0; i < control.traps.length && !found; i++) {
-			if (control.traps[i][0] == this.x
-				&& control.traps[i][1] == this.y) {
+		for (let i = 0; i < gameHistory.traps.length && !found; i++) {
+			if (gameHistory.traps[i][0] == this.x
+				&& gameHistory.traps[i][1] == this.y) {
 				found = true;
 
 				if (this.goldCollected > 0) {
 					this.goldCollected--;
-					GameFactory.actorFromCode('o', this.x, this.y - 1);
+					GameFactory.actorFromCode('o', this.x, this.y - 1); //??
 				}
 			}
 		}
@@ -349,7 +351,7 @@ class EvilActiveActor extends ActiveActor {
 			&& !(control.world[this.x - dx][this.y].isAscendable() ||
 				control.world[this.x - dx][this.y].isClimbable())) {
 			this.goldCollected = 0;
-			GameFactory.actorFromCode('o', this.x - dx, this.y);
+			GameFactory.actorFromCode('o', this.x - dx, this.y); //??
 		}
 
 	}
@@ -378,6 +380,8 @@ class EvilActiveActor extends ActiveActor {
 				else if (this.canMove(1, 0))
 					this.move(1, 0);
 			}
+		} else {
+			gameHistory.bonusScore(2);
 		}
 	}
 }
@@ -457,24 +461,21 @@ class Hero extends ActiveActor {
 	}
 
 	isAllGoldCollected() {
-		return this.goldCollected >= control.totalGold;
+		return this.goldCollected >= gameHistory.totalLevelGold;
 	}
 
 	collectGold() {
 		super.collectGold();
 		this.show();
+		gameHistory.bonusScore(200);
 		if (this.isAllGoldCollected()) {
-			control.showEscapeLadder();
+			gameHistory.showEscapeLadder();
 		}
 		return true;
 	}
 
 	animation() {
 		super.animation();
-
-		if (this.y + 1 > WORLD_HEIGHT) { //fall to the void
-			this.die();
-		}
 
 		var k = control.getKey();
 		if (k == ' ') {
@@ -495,21 +496,10 @@ class Hero extends ActiveActor {
 	}
 
 	win() {
-		let level = control.currentLevel + 1;
-		if (level < MAPS.length) {
-			setTimeout(mesg, 0, 'Subida de Nível! Nível: ' + level);
-			setTimeout(reset, 5, level);
-		} else {
-			endGame();
-		}
-
-
-
+		gameHistory.levelUp();
 	}
 	die() {
-		setTimeout(mesg, 0, "Morreu, tente novamente");
-		let level = control.currentLevel;
-		setTimeout(reset, 100, level);
+		gameHistory.die();
 	}
 
 
@@ -543,30 +533,108 @@ class Robot extends EvilActiveActor {
 
 	}
 	animation() {
-		if (control.time % 4 === 0) {
+		if (control.time % 5 === 0) {
 			super.animation();
 		}
 	}
 }
 
 // GAME CONTROL
+class GameInfo {
+	constructor() {
+		this.lives = 5;
+		this.score = 0;
+		this.maxScore = 0;
+		this.currentLevel = 1;
+		this.traps = new Array();
+		this.totalLevelGold = 0;
+		this.escapeLadder = new Array();
+	}
+
+	loseLife() {
+		this.lives--;
+
+	}
+
+	bonusLife() {
+		this.lives++;
+	}
+
+	computeScore() {
+		this.score += Math.floor(100000 * this.currentLevel / hero.time);
+		drawScore();
+		this.updateMaxScore();
+	}
+
+	bonusScore(bonus) {
+		this.score += Math.floor(bonus * this.currentLevel / 2);
+		drawScore();
+		this.updateMaxScore();
+
+	}
+
+	updateMaxScore() {
+		if (this.score > this.maxScore) {
+			this.maxScore = this.score;
+		}
+	}
+
+	showEscapeLadder() {
+		for (let i = 0; i < this.escapeLadder.length; i++) {
+			let x = this.escapeLadder[i][0];
+			let y = this.escapeLadder[i][1];
+			//GameFactory.actorFromCode('e', x, y);
+			control.world[x][y].makeVisible();
+		}
+	}
+
+	die() {
+		this.loseLife();
+		if (this.lives > 0) {
+			let msg = "You died, try again. Level: " + this.currentLevel + "\n Lives remaining: " + this.lives;
+			gameHistory.score -= Math.floor(hero.goldCollected * 200 * this.currentLevel / 2 + (100 * this.currentLevel));
+			if (this.score < 0) {
+				this.score = 0;
+			}
+			setTimeout(mesg, 0, msg);
+			setTimeout(reset, 100, this.currentLevel);
+		} else {
+			setTimeout(mesg, 0, "You died and you don't have any more lives.\n Restart at level 1!");
+			gameHistory.score = 0;
+			this.lives = 5;
+			setTimeout(reset, 100, 1);
+		}
+		drawScore();
+	}
+
+	levelUp() {
+		let level = this.currentLevel + 1;
+		if (level < MAPS.length) {
+			setTimeout(mesg, 0, 'Subida de Nível! Nível: ' + level);
+			setTimeout(reset, 5, level);
+			this.bonusLife();
+			this.computeScore();
+		} else {
+			endGame();
+		}
+
+
+	}
+}
 
 class GameControl {
 	constructor(level) {
 		control = this;
 		this.key = 0;
 		this.time = 0;
-		this.currentLevel = level;
-		this.totalGold = 0;
-		this.escapeLadder = new Array();
-		this.traps = new Array();
+		gameHistory = new GameInfo();
 		this.ctx = document.getElementById("canvas1").getContext("2d");
 		empty = new Empty();	// only one empty actor needed
 		this.world = this.createMatrix();
 		this.worldActive = this.createMatrix();
-		this.loadLevel(this.currentLevel);
+		this.loadLevel(gameHistory.currentLevel);
 		this.setupEvents();
-		this.gameNumber = 0;
+		drawScore();
 	}
 
 
@@ -575,15 +643,6 @@ class GameControl {
 		this.ctx.canvas.width = this.ctx.canvas.width;
 		this.world = this.createMatrix();
 		this.worldActive = this.createMatrix();
-
-	}
-
-	showEscapeLadder() {
-		for (let i = 0; i < this.escapeLadder.length; i++) {
-			let x = this.escapeLadder[i][0];
-			let y = this.escapeLadder[i][1];
-			GameFactory.actorFromCode('e', x, y);
-		}
 
 	}
 	createMatrix() { // stored by columns
@@ -606,10 +665,10 @@ class GameControl {
 				// x/y reversed because map stored by lines
 				GameFactory.actorFromCode(map[y][x], x, y);
 				if (map[y][x] === 'o') {
-					control.totalGold++;
+					gameHistory.totalLevelGold++;
 				}
 				if (map[y][x] === 'E') {
-					control.escapeLadder.push([x, y]);
+					gameHistory.escapeLadder.push([x, y]);
 				}
 			}
 
@@ -655,13 +714,14 @@ class GameControl {
 }
 function reset(level) {
 	control.key = 0;
-	control.time = 0;
-	control.currentLevel = level;
-	control.totalGold = 0;
-	control.escapeLadder = new Array();
-	control.traps = new Array();
+	//control.time = 0;
+	gameHistory.currentLevel = level;
+	gameHistory.totalLevelGold = 0;
+	gameHistory.escapeLadder = new Array();
+	gameHistory.traps = new Array();
 	control.clear();
 	control.loadLevel(level);
+	drawScore();
 }
 
 // HTML FORM
@@ -683,20 +743,32 @@ function onLoad(level) {
 
 
 function b1() {
-	let level = control.currentLevel;
+	let level = gameHistory.currentLevel;
+	gameHistory.lives--;
 	reset(level);
-	mesg("Recomeçar nível " + level)
+	mesg("Restart level " + level)
 }
 
+function drawScore() {
+	let element = document.getElementById("info");
+	let element2 = document.getElementById("level");
+	element.innerHTML = "Score: " + gameHistory.score +
+		"     Lives: " + gameHistory.lives +
+		"     Gold: " + hero.goldCollected + " from " + gameHistory.totalLevelGold;
+	element2.innerHTML = "Level: " + gameHistory.currentLevel;
 
-function b2() {//TODO: score
-				//TODO: mortes
-				//TODO: musiquinha
-	let msg = "Time: "+control.time;
+}
+function b2() {
+	let time = "Time: " + control.time + ".\n";
+	let lives = "Lives remaining: " + gameHistory.lives + ".\n";
+	let score = "Total Score: " + gameHistory.score + ".\n";
+	let level = "Level: " + gameHistory.currentLevel + ".\n";
+	let gold = "Gold Collected: " + hero.goldCollected + " from "
+		+ gameHistory.totalLevelGold + " golds.\n"
+	let maxScore = "Maximum Score: " + gameHistory.maxScore;
+	let msg = time + level + gold + lives + score + maxScore;
 	mesg(msg)
-
-
-} //TODO: informações sobre o jogo
+} 
 
 
 
