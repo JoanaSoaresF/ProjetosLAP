@@ -7,7 +7,7 @@
 
 // tente não definir mais nenhuma variável global
 let animation;// to clear the SetInterval
-let empty, hero, control, gameHistory;
+let empty, hero, control, gameInfo;
 
 //Constants - Walking types
 const ASCENDABLE = 4;
@@ -135,7 +135,7 @@ class PassiveActorShootable extends PassiveActor {
 	getShot() {
 		if (control.world[this.x][this.y - 1].isFree()) {
 			this.hide();
-			gameHistory.traps.push([this.x, this.y, TIME_RESTORE_BRICK]);
+			gameInfo.traps.push([this.x, this.y, TIME_RESTORE_BRICK]);
 		}
 	}
 
@@ -149,7 +149,7 @@ class PassiveActorShootable extends PassiveActor {
 		if ((control.worldActive[this.x][this.y] instanceof ActiveActor)) {
 			control.worldActive[this.x][this.y].jumpBrick();
 		} else {
-			gameHistory.traps.shift();
+			gameInfo.traps.shift();
 		}
 
 		this.free = false;
@@ -162,19 +162,19 @@ class PassiveActorShootable extends PassiveActor {
 	 * passes 
 	 */
 	animation() {
-		for (let i = 0; i < gameHistory.traps.length; i++) {
+		for (let i = 0; i < gameInfo.traps.length; i++) {
 			//time left to restore brick
-			let time = gameHistory.traps[i][2];
+			let time = gameInfo.traps[i][2];
 			//trap's coordinates
-			let x = gameHistory.traps[i][0];
-			let y = gameHistory.traps[i][1];
+			let x = gameInfo.traps[i][0];
+			let y = gameInfo.traps[i][1];
 			if (time <= 0) {
 				control.world[x][y].restore();
 			}
 
 			if (this.x === x && this.y === y) {
 				//decreases the time of the trap
-				gameHistory.traps[i][2] -= 1;
+				gameInfo.traps[i][2] -= 1;
 			}
 		}
 	}
@@ -226,8 +226,12 @@ class ActiveActor extends Actor {
 
 	/**Computes the common aspects of the active actors movement */
 	move(dx, dy) {
+		
 		//Collect gold on the way
-		this.catch(dx, dy);
+		if(this.canMove(dx,dy)) {
+			this.catch(dx, dy);
+		}
+		
 
 		//evaluate if the good guy dies due to collision with robot
 		this.evalCollision(dx, dy);
@@ -272,7 +276,7 @@ class ActiveActor extends Actor {
 	/**Returns true if the actor is in a position from which it may fall */
 	mayFall() {
 		return this.y + 1 < WORLD_HEIGHT //in canvas
-		//the position bellow the actor must be walkable for not occur a fall
+			//the position bellow the actor must be walkable for not occur a fall
 			&& !(control.world[this.x][this.y + 1].isWalkable()
 				|| control.worldActive[this.x][this.y + 1].isWalkable()
 				//unless the actor is in a ladder or a rope
@@ -384,12 +388,13 @@ class EvilActiveActor extends ActiveActor {
 		this.free = true; //the hero and the robot have to colide
 		this.hX = 0;
 		this.hY = 0;
+		this.movCounter = 0;
 
 	}
 	/**Kills the bad guy (only when trapped with bricks on top) */
 	die() {
 		super.hide();
-		gameHistory.bonusScore(BONUS_SCORE_KILL_ROBOT);
+		gameInfo.bonusScore(BONUS_SCORE_KILL_ROBOT);
 	}
 
 	/**Informes the bad guy of the coordinates of the hero */
@@ -421,14 +426,15 @@ class EvilActiveActor extends ActiveActor {
 	 */
 	isTrapped() {
 		let found = false;
-		for (let i = 0; i < gameHistory.traps.length && !found; i++) {
-			if (gameHistory.traps[i][0] == this.x
-				&& gameHistory.traps[i][1] == this.y) {
+		for (let i = 0; i < gameInfo.traps.length && !found; i++) {
+			if (gameInfo.traps[i][0] == this.x
+				&& gameInfo.traps[i][1] == this.y) {
 				found = true;
 
 				if (this.goldCollected > 0) {
 					this.goldCollected--;
-					GameFactory.actorFromCode('o', this.x, this.y - 1);
+						GameFactory.actorFromCode('o', this.x, this.y - 1);
+					
 				}
 			}
 		}
@@ -447,7 +453,7 @@ class EvilActiveActor extends ActiveActor {
 			&& !(control.world[this.x - dx][this.y].isAscendable() ||
 				control.world[this.x - dx][this.y].isClimbable())) {
 			this.goldCollected = 0;
-			GameFactory.actorFromCode('o', this.x - dx, this.y); 
+			GameFactory.actorFromCode('o', this.x - dx, this.y);
 		}
 
 	}
@@ -480,7 +486,7 @@ class EvilActiveActor extends ActiveActor {
 					this.move(1, 0);
 			}
 		} else {
-			gameHistory.bonusScore(BONUS_SCORE_TRAPPED_ROBOT);
+			gameInfo.bonusScore(BONUS_SCORE_TRAPPED_ROBOT);
 		}
 	}
 }
@@ -561,7 +567,7 @@ class Hero extends ActiveActor {
 
 	/**Checks if the hero collected all the gold */
 	isAllGoldCollected() {
-		return this.goldCollected >= gameHistory.totalLevelGold;
+		return this.goldCollected >= gameInfo.totalLevelGold;
 	}
 
 	/**Collects the gold on the way
@@ -570,9 +576,9 @@ class Hero extends ActiveActor {
 	collectGold() {
 		super.collectGold();
 		this.show();
-		gameHistory.bonusScore(BONUS_SCORE_GOLD);
+		gameInfo.bonusScore(BONUS_SCORE_GOLD);
 		if (this.isAllGoldCollected()) {
-			gameHistory.showEscapeLadder();
+			gameInfo.showEscapeLadder();
 		}
 		return true;
 	}
@@ -590,7 +596,8 @@ class Hero extends ActiveActor {
 		if (k == null) return;
 		let [dx, dy] = k;
 
-		if (this.isAllGoldCollected() && this.y + dy < 0) { //level up
+		if (this.isAllGoldCollected() && this.y + dy < 0
+			&& control.world[this.x][this.y].isAscendable()) { //level up
 			this.win();
 		} else {
 			this.move(dx, dy);
@@ -599,13 +606,13 @@ class Hero extends ActiveActor {
 
 	/** Computes the level up */
 	win() {
-		gameHistory.levelUp();
+		gameInfo.levelUp();
 	}
 
 	/**Computes the dead of the hero */
 	die() {
 		this.hide();
-		gameHistory.die();
+		gameInfo.die();
 	}
 
 	/**Performs the hero's shot and the recoil of the gun*/
@@ -616,16 +623,19 @@ class Hero extends ActiveActor {
 
 			this.changeImage(8, (direction === -1)); //shot position
 
-			if (!control.world[this.x - 1][this.y].isFree()
-				&& !control.world[this.x + 1][this.y].isFree()
+			if (this.insideBorders(0, 1)
+				&& (this.x - 1 <= 0
+					|| !control.world[this.x - 1][this.y].isFree())
+				&& (this.x + 1 >= WORLD_WIDTH - 1
+					|| !control.world[this.x + 1][this.y].isFree())
 				&& control.world[this.x][this.y + 1].isDestructible()) {
-				/**the hero is trapped between bricks 
+				/**the hero is trapped between bricks or a brick and a border
 				 * in this situation the hero may shot down
 				 *  this condition is necessary to pass some levels 
-				 * like level 8 and 9*/
+				 * like level 9*/
 				control.world[this.x][this.y + 1].getShot(); //shot
 
-			} else if (this.insideBorders(0, 1)
+			} else if (this.insideBorders(direction, 1)
 				&& control.world[this.x + direction][this.y + 1].isDestructible()) {
 
 				control.world[this.x + direction][this.y + 1].getShot(); //shot brick
@@ -672,6 +682,9 @@ class GameInfo {
 		this.traps = new Array();
 		this.totalLevelGold = 0;
 		this.escapeLadder = new Array();
+		if(this.totalLevelGold === 0){
+			this.showEscapeLadder();
+		}
 	}
 
 	/**Decreases the lives of the gamer */
@@ -689,14 +702,14 @@ class GameInfo {
 	 */
 	computeScore() {
 		this.score += Math.floor(LEVEL_UP_BONUS * this.currentLevel / hero.time);
-		drawScore();
+		showInfo();
 		this.updateMaxScore();
 	}
 
 	/**Gives the gamer some bonus score in some events */
 	bonusScore(bonus) {
 		this.score += Math.floor(bonus * this.currentLevel / 2);
-		drawScore();
+		showInfo();
 		this.updateMaxScore();
 
 	}
@@ -725,7 +738,7 @@ class GameInfo {
 		this.loseLife();
 		if (this.lives > 0) {
 			let msg = DIED + this.currentLevel + "\n Lives remaining: " + this.lives;
-			gameHistory.score -= Math.floor(hero.goldCollected * 200 * this.currentLevel / 2 + (DEAD_PENALTY * this.currentLevel));
+			this.score -= Math.floor(hero.goldCollected * 200 * this.currentLevel / 2 + (DEAD_PENALTY * this.currentLevel));
 			if (this.score < 0) {
 				this.score = 0;
 			}
@@ -734,11 +747,11 @@ class GameInfo {
 		} else {
 			setTimeout(mesg, 0, END_LIVES);
 			control.time = 0;
-			gameHistory.score = 0;
+			this.score = 0;
 			this.lives = START_LIVES;
 			setTimeout(reset, 100, 1);
 		}
-		drawScore();
+		showInfo();
 	}
 
 	/**Computes the level up
@@ -746,7 +759,7 @@ class GameInfo {
 	 */
 	levelUp() {
 		let level = this.currentLevel + 1;
-		if (level < MAPS.length) {
+		if (level <= MAPS.length) {
 			setTimeout(mesg, 0, LEVEL_UP + level);
 			setTimeout(reset, 5, level);
 			this.bonusLife();
@@ -762,14 +775,15 @@ class GameControl {
 		control = this;
 		this.key = 0;
 		this.time = 0;
-		gameHistory = new GameInfo();
+		gameInfo = new GameInfo();
 		this.ctx = document.getElementById("canvas1").getContext("2d");
 		empty = new Empty();	// only one empty actor needed
 		this.world = this.createMatrix();
 		this.worldActive = this.createMatrix();
-		this.loadLevel(gameHistory.currentLevel);
+		this.loadLevel(gameInfo.currentLevel);
 		this.setupEvents();
-		drawScore();
+		showInfo();
+		
 	}
 	getPassive(x, y) {
 		return this.world[x][y];
@@ -805,10 +819,10 @@ class GameControl {
 				// x/y reversed because map stored by lines
 				GameFactory.actorFromCode(map[y][x], x, y);
 				if (map[y][x] === 'o') {
-					gameHistory.totalLevelGold++;
+					gameInfo.totalLevelGold++;
 				}
 				if (map[y][x] === 'E') {
-					gameHistory.escapeLadder.push([x, y]);
+					gameInfo.escapeLadder.push([x, y]);
 				}
 
 			}
@@ -855,23 +869,33 @@ class GameControl {
 }
 function reset(level) {
 	control.key = 0;
-	gameHistory.currentLevel = level;
-	gameHistory.totalLevelGold = 0;
-	gameHistory.escapeLadder = new Array();
-	gameHistory.traps = new Array();
+	gameInfo.currentLevel = level;
+	gameInfo.totalLevelGold = 0;
+	gameInfo.escapeLadder = new Array();
+	gameInfo.traps = new Array();
 	control.clear();
 	control.loadLevel(level);
-	drawScore();
+	showInfo();
 }
 
 // HTML FORM
 
 function endGame() {
-	control.ctx.clearRect(0, 0, canvas1.width, canvas1.height);
-	control.ctx.font = "30px Arial";
-	control.ctx.fillText(FINISH_GAME, 50, canvas1.height / 2);
-	//control = null;
+	
+	let element = document.getElementById("level");
+	let msg = FINISH_GAME + "\n Maximum Score: " + gameInfo.maxScore;
+	element.innerHTML = msg;
 	clearInterval(animation);
+
+}
+
+function showInfo() {
+	let element = document.getElementById("info");
+	let element2 = document.getElementById("level");
+	element.innerHTML = "Score: " + gameInfo.score +
+		"     Lives: " + gameInfo.lives +
+		"     Gold: " + hero.goldCollected + " from " + gameInfo.totalLevelGold;
+	element2.innerHTML = "Level: " + gameInfo.currentLevel;
 
 }
 
@@ -883,29 +907,20 @@ function onLoad() {
 
 
 function b1() {
-	let level = gameHistory.currentLevel;
-	gameHistory.lives--;
+	let level = gameInfo.currentLevel;
+	gameInfo.lives--;
 	reset(level);
 	mesg(RESTART_LEVEL + level)
 }
 
-function drawScore() {
-	let element = document.getElementById("info");
-	let element2 = document.getElementById("level");
-	element.innerHTML = "Score: " + gameHistory.score +
-		"     Lives: " + gameHistory.lives +
-		"     Gold: " + hero.goldCollected + " from " + gameHistory.totalLevelGold;
-	element2.innerHTML = "Level: " + gameHistory.currentLevel;
-
-}
 function b2() {
 	let time = "Time: " + control.time + ".\n";
-	let lives = "Lives remaining: " + gameHistory.lives + ".\n";
-	let score = "Total Score: " + gameHistory.score + ".\n";
-	let level = "Level: " + gameHistory.currentLevel + ".\n";
+	let lives = "Lives remaining: " + gameInfo.lives + ".\n";
+	let score = "Total Score: " + gameInfo.score + ".\n";
+	let level = "Level: " + gameInfo.currentLevel + ".\n";
 	let gold = "Gold Collected: " + hero.goldCollected + " from "
-		+ gameHistory.totalLevelGold + " golds.\n"
-	let maxScore = "Maximum Score: " + gameHistory.maxScore;
+		+ gameInfo.totalLevelGold + " golds.\n"
+	let maxScore = "Maximum Score: " + gameInfo.maxScore;
 	let msg = time + level + gold + lives + score + maxScore;
 	mesg(msg)
 }
