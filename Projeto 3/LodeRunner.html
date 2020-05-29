@@ -17,39 +17,28 @@ para alguns aspetos da implementa��o que possam ser menos �bvios para o av
 -->
 
 <HEAD>
-<title>Linguagens e Ambientes de Programa��o (2019/2020) [Eng.Inf. - DI/FCT/UNL] - 3� projeto pr�tico (Javascript)</title>
-<link rel="shortcut icon" href="">
-<SCRIPT TYPE="text/javascript" src="LodeRunner0.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" src="LodeRunner.js"></SCRIPT>
-
-<style>
-	image {
-	  background-image: url('http://ctp.di.fct.unl.pt/miei/lap/projs/proj2020-3/files/images/brick.png') repeat;
-	  opacity: 0.10;
-	  background-attachment: fixed;
-	  background-size: 100% 100%;
-	}
-	body:hover {
-  		opacity: 1.0;
-	}
-</style>
+	<title>Linguagens e Ambientes de Programa��o (2019/2020) [Eng.Inf. - DI/FCT/UNL] - 3� projeto pr�tico (Javascript)
+	</title>
+	<link rel="shortcut icon" href="">
+	<SCRIPT TYPE="text/javascript" src="LodeRunner0.js"></SCRIPT>
+	<SCRIPT TYPE="text/javascript" src="LodeRunner.js"></SCRIPT>
 
 </HEAD>
 
-<BODY onload="onLoad(5)">
-<p><b>LodeRunner</b> -- Gonçalo Lourenço nº55780, Joana Faria nº55754</p>
-<FORM NAME="form1">
-	<p id='level' style="max-width:506px; background-color:rgb(194, 69, 11); 
+<BODY onload="onLoad()">
+	<p><b>LodeRunner</b> -- Gonçalo Lourenço nº55780, Joana Faria nº55754</p>
+	<FORM NAME="form1">
+		<p id='level' style="max-width:506px; background-color:rgb(194, 69, 11); 
 	color:rgb(255, 255, 255); font-family:courier;font-size:150%;
-	text-align:center;" >Level 1</p>
-	<CANVAS id="canvas1" width="504" height="272" style="border:1px solid #000000;">
-		Your browser doesn't support the HTML5 CANVAS tag. </CANVAS>
+	text-align:center;">Level 1</p>
+		<CANVAS id="canvas1" width="504" height="272" style="border:1px solid #000000;">
+			Your browser doesn't support the HTML5 CANVAS tag. </CANVAS>
 		<p id='info' style="max-width:506px; background-color:rgb(194, 69, 11); 
 	color:rgb(255, 255, 255); font-family:courier;font-size:120%;
-	text-align:center;" ></p>
-	<INPUT TYPE="button" NAME="button1" VALUE="Reset" SIZE=10 OnClick="b1()">
-	<INPUT TYPE="button" NAME="button2" VALUE="Pause" SIZE=10 OnClick="b2()">
-</FORM>
+	text-align:center;"></p>
+		<INPUT TYPE="button" NAME="button1" VALUE="Reset" SIZE=10 OnClick="b1()">
+		<INPUT TYPE="button" NAME="button2" VALUE="Pause" SIZE=10 OnClick="b2()">
+	</FORM>
 </BODY>
 
 </HTML>
