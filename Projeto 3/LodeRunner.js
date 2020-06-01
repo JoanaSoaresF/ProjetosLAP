@@ -1,6 +1,7 @@
 /*     Lode Runner
 
 01234567890123456789012345678901234567890123456789012345678901234567890123456789
+Autores: Gonçalo Lourenço (55780), Joana Faria (55754)
 */
 
 // GLOBAL VARIABLES
@@ -16,7 +17,7 @@ const CLIMBABLE = 2;
 const VOID = 0;
 
 //Constants - game rules
-const START_LEVEL = 1;
+const START_LEVEL = 6;
 const TIME_RESTORE_BRICK = 250;
 const SPEED_ROBOTS = 4;
 const LEVEL_UP_BONUS = 100000;
@@ -58,7 +59,8 @@ class Actor {
 		control.ctx.drawImage(GameImages[this.imageName],
 			x * ACTOR_PIXELS_X, y * ACTOR_PIXELS_Y);
 	}
-	/**Returns true is the place is free to move to (empty, chimney, ladder and rope) */
+	/**Returns true is the place is free to move to 
+	 * (empty, chimney, ladder and rope) */
 	isFree() {
 		return this.free;
 	}
@@ -80,7 +82,7 @@ class Actor {
 	}
 
 	/**Returns true if the actor is against the hero 
-	 * (In the future we thought we could add passive actors that are ~
+	 * (In the future we thought we could add passive actors that are
 	 * armful to the hero) */
 	isEnemy() {
 		return this.evil;
@@ -158,7 +160,7 @@ class PassiveActorShootable extends PassiveActor {
 		this.show();
 	}
 
-	/**Animation of the passive actor so it can be restored we the time´
+	/**Animation of the passive actor so it can be restored we the time
 	 * passes 
 	 */
 	animation() {
@@ -226,12 +228,12 @@ class ActiveActor extends Actor {
 
 	/**Computes the common aspects of the active actors movement */
 	move(dx, dy) {
-		
+
 		//Collect gold on the way
-		if(this.canMove(dx,dy)) {
+		if (this.canMove(dx, dy)) {
 			this.catch(dx, dy);
 		}
-		
+
 
 		//evaluate if the good guy dies due to collision with robot
 		this.evalCollision(dx, dy);
@@ -267,7 +269,7 @@ class ActiveActor extends Actor {
 			&& (dy >= 0 || control.world[this.x][this.y].isAscendable())
 			// can't move during a fall
 			&& (control.world[this.x][this.y].isClimbable()
-				|| (this.y + 1 === WORLD_HEIGHT)//can walk on the bottom border	
+				|| (this.y + 1 === WORLD_HEIGHT)//can walk on the bottom border
 				|| control.world[this.x][this.y + 1].isWalkable()
 				|| control.worldActive[this.x][this.y + 1].isWalkable()
 				|| control.world[this.x][this.y].isAscendable());
@@ -433,8 +435,8 @@ class EvilActiveActor extends ActiveActor {
 
 				if (this.goldCollected > 0) {
 					this.goldCollected--;
-						GameFactory.actorFromCode('o', this.x, this.y - 1);
-					
+					GameFactory.actorFromCode('o', this.x, this.y - 1);
+
 				}
 			}
 		}
@@ -637,13 +639,17 @@ class Hero extends ActiveActor {
 
 			} else if (this.insideBorders(direction, 1)
 				&& control.world[this.x + direction][this.y + 1].isDestructible()) {
-
-				control.world[this.x + direction][this.y + 1].getShot(); //shot brick
+				//shot brick
+				control.world[this.x + direction][this.y + 1].getShot();
 			}
 
 			if (this.insideBorders(-direction, 0) //gun's recoil
 				&& control.world[this.x - direction][this.y].isFree()
-				&& control.world[this.x - direction][this.y + 1].isWalkable()) {
+				&& (control.world[this.x - direction][this.y + 1].isWalkable()
+					|| control.worldActive[this.x - direction][this.y + 1].isWalkable())) {
+				
+				this.evalCollision(-direction, 0);
+				this.catch(-direction, 0);
 				this.hide();
 				this.x -= direction;
 				this.show();
@@ -682,7 +688,7 @@ class GameInfo {
 		this.traps = new Array();
 		this.totalLevelGold = 0;
 		this.escapeLadder = new Array();
-		if(this.totalLevelGold === 0){
+		if (this.totalLevelGold === 0) {
 			this.showEscapeLadder();
 		}
 	}
@@ -738,7 +744,8 @@ class GameInfo {
 		this.loseLife();
 		if (this.lives > 0) {
 			let msg = DIED + this.currentLevel + "\n Lives remaining: " + this.lives;
-			this.score -= Math.floor(hero.goldCollected * 200 * this.currentLevel / 2 + (DEAD_PENALTY * this.currentLevel));
+			this.score -= Math.floor(hero.goldCollected * 200 * this.currentLevel / 2 
+							+ (DEAD_PENALTY * this.currentLevel));
 			if (this.score < 0) {
 				this.score = 0;
 			}
@@ -783,13 +790,7 @@ class GameControl {
 		this.loadLevel(gameInfo.currentLevel);
 		this.setupEvents();
 		showInfo();
-		
-	}
-	getPassive(x, y) {
-		return this.world[x][y];
-	}
-	getActive(x, y) {
-		return this.worldActive[x][y];
+
 	}
 
 	/**Clears the canvas of the game */
@@ -867,6 +868,8 @@ class GameControl {
 	keyUpEvent(k) {
 	}
 }
+
+
 function reset(level) {
 	control.key = 0;
 	gameInfo.currentLevel = level;
@@ -881,7 +884,7 @@ function reset(level) {
 // HTML FORM
 
 function endGame() {
-	
+
 	let element = document.getElementById("level");
 	let msg = FINISH_GAME + "\n Maximum Score: " + gameInfo.maxScore;
 	element.innerHTML = msg;
@@ -904,8 +907,6 @@ function onLoad() {
 	GameImages.loadAll(function () { new GameControl(); });
 }
 
-
-
 function b1() {
 	let level = gameInfo.currentLevel;
 	gameInfo.lives--;
@@ -925,5 +926,10 @@ function b2() {
 	mesg(msg)
 }
 
+function b3() {
+	clearInterval(animation);
+	control.clear();
+	onload();
+}
 
 
